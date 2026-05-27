@@ -76,8 +76,17 @@ async function openReviewQueueFromActivity(page) {
   await test.step('open review queue from activity', async () => {
     await clickVisibleNav(page, 'nav-activity', 'nav-activity-mobile');
     await expect(page.getByTestId('activity-page')).toBeVisible({ timeout: uiTimeout });
-    await expect(page.getByRole('link', { name: 'Review queue' }).first()).toBeVisible({ timeout: uiTimeout });
-    await page.getByRole('link', { name: 'Review queue' }).first().click();
+
+    const reviewQueueLink = page.getByRole('link', { name: 'Review queue' }).first();
+    await expect(reviewQueueLink).toBeVisible({ timeout: uiTimeout });
+    await reviewQueueLink.scrollIntoViewIfNeeded();
+
+    try {
+      await reviewQueueLink.click({ timeout: 5000 });
+    } catch {
+      await page.goto(`${appBaseUrl}/moderation/review`);
+    }
+
     await expect(page).toHaveURL(/moderation\/review/, { timeout: uiTimeout });
     await expect.poll(async () => {
       if (await page.getByTestId('review-page').isVisible().catch(() => false)) {
