@@ -1,0 +1,1300 @@
+import express from 'express';
+import cors from 'cors';
+import { createDatabase } from './db.js';
+import {
+  initServerMonitoring,
+  monitoringErrorMiddleware,
+  monitoringRequestMiddleware,
+  registerProcessErrorHandlers,
+} from './monitoring.js';
+
+initServerMonitoring();
+registerProcessErrorHandlers();
+
+const db = await createDatabase();
+
+process.on('SIGTERM', () => {
+  void db.close().finally(() => process.exit(0));
+});
+
+const boards = ['all-company', 'engineering', 'design', 'people-ops'];
+const roles = ['Administrator', 'Moderator', 'Auditor', 'Reviewer', 'Approver', 'Member', 'Viewer'];
+const reviewRoleByLevel = { 1: 'Reviewer', 2: 'Approver', 3: 'Moderator' };
+
+const sqliteSchema = `
+  CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    role TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1
+  );
+  CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    role TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS posts (
+    id TEXT PRIMARY KEY,
+    author TEXT NOT NULL,
+    content TEXT NOT NULL,
+    board_slug TEXT NOT NULL DEFAULT 'all-company',
+    visibility TEXT NOT NULL DEFAULT 'Public',
+    status TEXT NOT NULL,
+    risk_level TEXT NOT NULL DEFAULT 'None',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS moderation_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    keyword TEXT NOT NULL UNIQUE,
+    risk_level TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_by TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS post_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id TEXT NOT NULL,
+    level INTEGER NOT NULL,
+    reviewer_role TEXT NOT NULL,
+    status TEXT NOT NULL,
+    reviewer TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    reviewed_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS post_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id TEXT NOT NULL,
+    author TEXT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS activity_logs (
+    id TEXT PRIMARY KEY,
+    action TEXT NOT NULL,
+    username TEXT,
+    role TEXT,
+    post_id TEXT,
+    task_id INTEGER,
+    session_id TEXT,
+    at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS board_memberships (
+    username TEXT NOT NULL,
+    board_slug TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'Member',
+    joined_at TEXT NOT NULL,
+    PRIMARY KEY (username, board_slug)
+  );
+  CREATE TABLE IF NOT EXISTS board_invites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    board_slug TEXT NOT NULL,
+    inviter TEXT NOT NULL,
+    invitee TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pending',
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS saved_smart_lists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    name TEXT NOT NULL,
+    query TEXT NOT NULL DEFAULT '',
+    status_filter TEXT NOT NULL DEFAULT '',
+    risk_filter TEXT NOT NULL DEFAULT '',
+    board_slug TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS user_profiles (
+    username TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    location TEXT NOT NULL DEFAULT '',
+    bio TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS user_preferences (
+    username TEXT PRIMARY KEY,
+    theme TEXT NOT NULL DEFAULT 'System',
+    notifications_enabled INTEGER NOT NULL DEFAULT 1,
+    default_board_slug TEXT NOT NULL DEFAULT 'all-company',
+    digest_cadence TEXT NOT NULL DEFAULT 'Daily',
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS user_onboarding (
+    username TEXT PRIMARY KEY,
+    profile_completed INTEGER NOT NULL DEFAULT 0,
+    joined_board INTEGER NOT NULL DEFAULT 0,
+    saved_smart_list INTEGER NOT NULL DEFAULT 0,
+    reviewed_post INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS notification_reads (
+    username TEXT NOT NULL,
+    notification_id TEXT NOT NULL,
+    read_at TEXT NOT NULL,
+    PRIMARY KEY (username, notification_id)
+  );
+`;
+
+const postgresSchema = `
+  CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    role TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1
+  );
+  CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    role TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS posts (
+    id TEXT PRIMARY KEY,
+    author TEXT NOT NULL,
+    content TEXT NOT NULL,
+    board_slug TEXT NOT NULL DEFAULT 'all-company',
+    visibility TEXT NOT NULL DEFAULT 'Public',
+    status TEXT NOT NULL,
+    risk_level TEXT NOT NULL DEFAULT 'None',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS moderation_rules (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    keyword TEXT NOT NULL UNIQUE,
+    risk_level TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_by TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS post_reviews (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    post_id TEXT NOT NULL,
+    level INTEGER NOT NULL,
+    reviewer_role TEXT NOT NULL,
+    status TEXT NOT NULL,
+    reviewer TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    reviewed_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS post_comments (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    post_id TEXT NOT NULL,
+    author TEXT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS activity_logs (
+    id TEXT PRIMARY KEY,
+    action TEXT NOT NULL,
+    username TEXT,
+    role TEXT,
+    post_id TEXT,
+    task_id INTEGER,
+    session_id TEXT,
+    at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS board_memberships (
+    username TEXT NOT NULL,
+    board_slug TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'Member',
+    joined_at TEXT NOT NULL,
+    PRIMARY KEY (username, board_slug)
+  );
+  CREATE TABLE IF NOT EXISTS board_invites (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    board_slug TEXT NOT NULL,
+    inviter TEXT NOT NULL,
+    invitee TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pending',
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS saved_smart_lists (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    username TEXT NOT NULL,
+    name TEXT NOT NULL,
+    query TEXT NOT NULL DEFAULT '',
+    status_filter TEXT NOT NULL DEFAULT '',
+    risk_filter TEXT NOT NULL DEFAULT '',
+    board_slug TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS user_profiles (
+    username TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    location TEXT NOT NULL DEFAULT '',
+    bio TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS user_preferences (
+    username TEXT PRIMARY KEY,
+    theme TEXT NOT NULL DEFAULT 'System',
+    notifications_enabled INTEGER NOT NULL DEFAULT 1,
+    default_board_slug TEXT NOT NULL DEFAULT 'all-company',
+    digest_cadence TEXT NOT NULL DEFAULT 'Daily',
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS user_onboarding (
+    username TEXT PRIMARY KEY,
+    profile_completed INTEGER NOT NULL DEFAULT 0,
+    joined_board INTEGER NOT NULL DEFAULT 0,
+    saved_smart_list INTEGER NOT NULL DEFAULT 0,
+    reviewed_post INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS notification_reads (
+    username TEXT NOT NULL,
+    notification_id TEXT NOT NULL,
+    read_at TEXT NOT NULL,
+    PRIMARY KEY (username, notification_id)
+  );
+`;
+
+function schemaForDialect() {
+  return db.dialect === 'postgres' ? postgresSchema : sqliteSchema;
+}
+
+function now() {
+  return new Date().toISOString();
+}
+
+function roleFrom(req) {
+  return String(req.headers['x-role'] ?? 'Viewer');
+}
+
+function userFrom(req) {
+  return String(req.headers['x-username'] ?? 'guest.user');
+}
+
+function isAllowed(req, allowedRoles) {
+  return allowedRoles.includes(roleFrom(req));
+}
+
+function rejectForbidden(res, message = 'Forbidden') {
+  return res.status(403).json({ error: message });
+}
+
+function asyncHandler(handler) {
+  return (req, res, next) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
+
+async function countRows(sql, ...params) {
+  const row = await db.prepare(sql).get(...params);
+  return Number(row?.count ?? 0);
+}
+
+async function ensurePostBoardColumn() {
+  if (db.dialect !== 'sqlite') return;
+  const columns = await db.prepare('PRAGMA table_info(posts)').all();
+  const hasBoardSlug = columns.some((column) => column.name === 'board_slug');
+  if (!hasBoardSlug) {
+    await db.exec("ALTER TABLE posts ADD COLUMN board_slug TEXT NOT NULL DEFAULT 'all-company'");
+  }
+}
+
+async function ensureBoardMembershipRoleColumn() {
+  if (db.dialect !== 'sqlite') return;
+  const columns = await db.prepare('PRAGMA table_info(board_memberships)').all();
+  const hasRole = columns.some((column) => column.name === 'role');
+  if (!hasRole) {
+    await db.exec("ALTER TABLE board_memberships ADD COLUMN role TEXT NOT NULL DEFAULT 'Member'");
+  }
+}
+
+async function normalizeLegacyPostStatuses() {
+  await db.prepare("UPDATE posts SET status = 'Pending Review' WHERE status = 'Under Review'").run();
+}
+
+async function migrateLegacyTables() {
+  if (db.dialect !== 'sqlite') return;
+
+  const legacyRules = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='keyword_rules'").get();
+  const legacyTasks = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='review_tasks'").get();
+
+  if (legacyRules && await countRows('SELECT COUNT(*) AS count FROM moderation_rules') === 0) {
+    await db.prepare(`
+      INSERT INTO moderation_rules (id, keyword, risk_level, active, created_by, created_at)
+      SELECT id, keyword, risk_level, active, created_by, created_at FROM keyword_rules
+      ON CONFLICT (id) DO NOTHING
+    `).run();
+  }
+
+  if (legacyTasks && await countRows('SELECT COUNT(*) AS count FROM post_reviews') === 0) {
+    await db.prepare(`
+      INSERT INTO post_reviews (id, post_id, level, reviewer_role, status, reviewer, note, created_at, reviewed_at)
+      SELECT id, post_id, level, reviewer_role, status, reviewer, note, created_at, reviewed_at FROM review_tasks
+      ON CONFLICT (id) DO NOTHING
+    `).run();
+  }
+}
+
+async function log(action, fields = {}) {
+  await db.prepare(`
+    INSERT INTO activity_logs (id, action, username, role, post_id, task_id, session_id, at)
+    VALUES (@id, @action, @username, @role, @post_id, @task_id, @session_id, @at)
+  `).run({
+    id: crypto.randomUUID(),
+    action,
+    username: fields.username ?? null,
+    role: fields.role ?? null,
+    post_id: fields.postId ?? null,
+    task_id: fields.taskId ?? null,
+    session_id: fields.sessionId ?? null,
+    at: now(),
+  });
+}
+
+async function seedIfEmpty() {
+  if (await countRows('SELECT COUNT(*) AS count FROM users') === 0) {
+    const insertUser = db.prepare('INSERT INTO users (username, role, active) VALUES (?, ?, ?)');
+    await insertUser.run('mia.chen', 'Member', 1);
+    await insertUser.run('kevin.liu', 'Member', 1);
+    await insertUser.run('auditor.one', 'Reviewer', 1);
+    await insertUser.run('auditor.two', 'Approver', 1);
+    await insertUser.run('manager.one', 'Administrator', 1);
+    await insertUser.run('moderator.one', 'Moderator', 1);
+  }
+
+  if (await countRows('SELECT COUNT(*) AS count FROM moderation_rules') === 0) {
+    const insertRule = db.prepare('INSERT INTO moderation_rules (keyword, risk_level, active, created_by, created_at) VALUES (?, ?, ?, ?, ?)');
+    await insertRule.run('project', 'Low', 1, 'manager.one', now());
+    await insertRule.run('salary', 'Medium', 1, 'manager.one', now());
+    await insertRule.run('confidential', 'High', 1, 'manager.one', now());
+  }
+
+  if (await countRows('SELECT COUNT(*) AS count FROM posts') === 0) {
+    const insertPost = db.prepare(`
+      INSERT INTO posts (id, author, content, board_slug, visibility, status, risk_level, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    await insertPost.run('POST-1001', 'mia.chen', 'Working on our company project launch today.', 'all-company', 'Public', 'Published', 'Low', now(), now());
+    await insertPost.run('POST-1002', 'kevin.liu', 'I need to update salary details for the new policy.', 'people-ops', 'Public', 'Pending Review', 'Medium', now(), now());
+    await insertPost.run('POST-1003', 'mia.chen', 'This confidential plan needs extra approval.', 'engineering', 'Public', 'Pending Review', 'High', now(), now());
+
+    const insertReview = db.prepare(`
+      INSERT INTO post_reviews (post_id, level, reviewer_role, status, reviewer, note, created_at, reviewed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    await insertReview.run('POST-1002', 1, 'Reviewer', 'Pending', null, 'Low keyword trigger', now(), null);
+    await insertReview.run('POST-1003', 1, 'Reviewer', 'Approved', 'auditor.one', 'Layer 1 approved', now(), now());
+    await insertReview.run('POST-1003', 2, 'Approver', 'Pending', null, 'Layer 2 pending', now(), null);
+    await insertReview.run('POST-1003', 3, 'Moderator', 'Pending', null, 'Layer 3 pending', now(), null);
+  }
+
+  if (await countRows('SELECT COUNT(*) AS count FROM board_memberships') === 0) {
+    const insertMembership = db.prepare(`
+      INSERT INTO board_memberships (username, board_slug, role, joined_at)
+      VALUES (?, ?, ?, ?)
+    `);
+    await insertMembership.run('mia.chen', 'all-company', 'Member', now());
+    await insertMembership.run('mia.chen', 'engineering', 'Owner', now());
+    await insertMembership.run('kevin.liu', 'all-company', 'Member', now());
+    await insertMembership.run('kevin.liu', 'people-ops', 'Owner', now());
+    await insertMembership.run('auditor.one', 'all-company', 'Member', now());
+    await insertMembership.run('auditor.one', 'engineering', 'Member', now());
+    await insertMembership.run('manager.one', 'all-company', 'Owner', now());
+  }
+
+  if (await countRows('SELECT COUNT(*) AS count FROM user_profiles') === 0) {
+    const insertProfile = db.prepare(`
+      INSERT INTO user_profiles (username, display_name, title, location, bio, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    await insertProfile.run('mia.chen', 'Mia Chen', 'Product Operations', 'Taipei', 'Bridges launch updates, moderation flow, and cross-team communication.', now());
+    await insertProfile.run('kevin.liu', 'Kevin Liu', 'People Partner', 'Taipei', 'Coordinates policy updates and company-wide people operations messaging.', now());
+    await insertProfile.run('auditor.one', 'Auditor One', 'Review Analyst', 'Remote', 'Handles moderation checks and layered approval flow.', now());
+  }
+
+  if (await countRows('SELECT COUNT(*) AS count FROM user_preferences') === 0) {
+    const insertPreference = db.prepare(`
+      INSERT INTO user_preferences (username, theme, notifications_enabled, default_board_slug, digest_cadence, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    await insertPreference.run('mia.chen', 'System', 1, 'engineering', 'Instant', now());
+    await insertPreference.run('kevin.liu', 'Light', 1, 'people-ops', 'Daily', now());
+    await insertPreference.run('auditor.one', 'Dark', 1, 'engineering', 'Instant', now());
+  }
+}
+
+async function ensureDefaultModerationRules() {
+  const upsertRule = db.prepare(`
+    INSERT INTO moderation_rules (keyword, risk_level, active, created_by, created_at)
+    VALUES (?, ?, 1, ?, ?)
+    ON CONFLICT(keyword) DO UPDATE SET
+      risk_level = excluded.risk_level,
+      active = 1
+  `);
+  await upsertRule.run('project', 'Low', 'manager.one', now());
+  await upsertRule.run('salary', 'Medium', 'manager.one', now());
+  await upsertRule.run('confidential', 'High', 'manager.one', now());
+}
+
+async function initializeDatabase() {
+  await db.exec(schemaForDialect());
+  await ensurePostBoardColumn();
+  await ensureBoardMembershipRoleColumn();
+  await normalizeLegacyPostStatuses();
+  await seedIfEmpty();
+  await ensureDefaultModerationRules();
+  await migrateLegacyTables();
+}
+
+async function keywordRules() {
+  const rules = await db.prepare('SELECT id, keyword, risk_level AS riskLevel, active, created_by AS createdBy, created_at AS createdAt FROM moderation_rules ORDER BY risk_level DESC, keyword ASC').all();
+  return rules.map((rule) => ({ ...rule, active: !!rule.active }));
+}
+
+async function getKeywordRuleById(id) {
+  const rule = await db.prepare(`
+    SELECT id, keyword, risk_level AS riskLevel, active, created_by AS createdBy, created_at AS createdAt
+    FROM moderation_rules
+    WHERE id = ?
+  `).get(id);
+  return rule ? { ...rule, active: !!rule.active } : null;
+}
+
+async function detectRisk(content) {
+  const rules = await db.prepare('SELECT keyword, risk_level FROM moderation_rules WHERE active = 1').all();
+  const lower = content.toLowerCase();
+  const matches = rules.filter((rule) => lower.includes(String(rule.keyword).toLowerCase()));
+  if (matches.some((item) => item.risk_level === 'High')) return { riskLevel: 'High', levels: 3, matches };
+  if (matches.some((item) => item.risk_level === 'Medium')) return { riskLevel: 'Medium', levels: 2, matches };
+  if (matches.some((item) => item.risk_level === 'Low')) return { riskLevel: 'Low', levels: 1, matches };
+  return { riskLevel: 'None', levels: 0, matches: [] };
+}
+
+async function getPostTasks(postId) {
+  return db.prepare(`
+    SELECT id, post_id AS postId, level, reviewer_role AS reviewerRole, status, reviewer, note, created_at AS createdAt, reviewed_at AS reviewedAt
+    FROM post_reviews
+    WHERE post_id = ?
+    ORDER BY level ASC, id ASC
+  `).all(postId);
+}
+
+async function getComments(postId) {
+  return db.prepare(`
+    SELECT id, post_id AS postId, author, comment, created_at AS createdAt
+    FROM post_comments
+    WHERE post_id = ?
+    ORDER BY id DESC
+  `).all(postId);
+}
+
+async function buildMentionItems(username) {
+  const handle = `@${String(username || '').trim().toLowerCase()}`;
+  if (!handle || handle === '@') return [];
+
+  const posts = await db.prepare(`
+    SELECT id, author, content, board_slug AS boardSlug, created_at AS createdAt
+    FROM posts
+    ORDER BY created_at DESC
+  `).all();
+
+  const comments = await db.prepare(`
+    SELECT c.id, c.post_id AS postId, c.author, c.comment, c.created_at AS createdAt, p.board_slug AS boardSlug
+    FROM post_comments c
+    JOIN posts p ON p.id = c.post_id
+    ORDER BY c.created_at DESC
+  `).all();
+
+  const postMentions = posts
+    .filter((post) => String(post.content).toLowerCase().includes(handle))
+    .map((post) => ({
+      id: `post-${post.id}`,
+      sourceType: 'post',
+      postId: post.id,
+      boardSlug: post.boardSlug,
+      author: post.author,
+      excerpt: post.content,
+      createdAt: post.createdAt,
+      targetUser: username,
+    }));
+
+  const commentMentions = comments
+    .filter((comment) => String(comment.comment).toLowerCase().includes(handle))
+    .map((comment) => ({
+      id: `comment-${comment.id}`,
+      sourceType: 'comment',
+      postId: comment.postId,
+      boardSlug: comment.boardSlug,
+      author: comment.author,
+      excerpt: comment.comment,
+      createdAt: comment.createdAt,
+      targetUser: username,
+    }));
+
+  return [...postMentions, ...commentMentions]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+}
+
+async function buildInboxItems(username, role) {
+  const mentions = (await buildMentionItems(username)).map((item) => ({
+    id: `mention-${item.id}`,
+    kind: 'mention',
+    title: `${item.author} mentioned you`,
+    summary: item.excerpt,
+    postId: item.postId,
+    boardSlug: item.boardSlug,
+    createdAt: item.createdAt,
+    actionable: true,
+  }));
+
+  const pendingReviews = await db.prepare(`
+    SELECT r.id, r.post_id AS postId, r.level, r.reviewer_role AS reviewerRole, r.note, r.created_at AS createdAt, p.board_slug AS boardSlug
+    FROM post_reviews r
+    JOIN posts p ON p.id = r.post_id
+    WHERE r.status = 'Pending' AND r.reviewer_role = ?
+    ORDER BY r.created_at DESC
+  `).all(role);
+
+  const reviewItems = pendingReviews.map((task) => ({
+    id: `review-${task.id}`,
+    kind: 'review',
+    title: `Review layer ${task.level} is waiting`,
+    summary: `${task.postId} in #${task.boardSlug} needs ${task.reviewerRole}`,
+    postId: task.postId,
+    boardSlug: task.boardSlug,
+    createdAt: task.createdAt,
+    actionable: true,
+  }));
+
+  const statusRows = await db.prepare(`
+    SELECT id, status, board_slug AS boardSlug, updated_at AS updatedAt
+    FROM posts
+    WHERE author = ? AND status IN ('Pending Review', 'Rejected')
+    ORDER BY updated_at DESC
+  `).all(username);
+
+  const statusItems = statusRows.map((post) => ({
+    id: `status-${post.id}`,
+    kind: 'status',
+    title: `${post.id} is ${post.status}`,
+    summary: `Your thread in #${post.boardSlug} currently needs attention.`,
+    postId: post.id,
+    boardSlug: post.boardSlug,
+    createdAt: post.updatedAt,
+    actionable: true,
+  }));
+
+  return [...mentions, ...reviewItems, ...statusItems]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 30);
+}
+
+async function buildNotifications(username, role) {
+  const readItems = await db.prepare(`
+    SELECT notification_id AS notificationId
+    FROM notification_reads
+    WHERE username = ?
+  `).all(username);
+  const readSet = new Set(readItems.map((item) => item.notificationId));
+
+  const inviteItems = (await getBoardInvites(username))
+    .filter((item) => item.invitee === username && item.status === 'Pending')
+    .map((invite) => ({
+      id: `invite-${invite.id}`,
+      kind: 'invite',
+      title: `Board invite for #${invite.boardSlug}`,
+      summary: `${invite.inviter} invited you to join this board.`,
+      boardSlug: invite.boardSlug,
+      postId: null,
+      createdAt: invite.createdAt,
+      actionable: true,
+      read: readSet.has(`invite-${invite.id}`),
+    }));
+
+  const inboxItems = (await buildInboxItems(username, role)).map((item) => ({
+    ...item,
+    kind: item.kind,
+    read: readSet.has(item.id),
+  }));
+
+  const recommendationItems = (await getBoardRecommendations(username))
+    .slice(0, 2)
+    .map((recommendation) => ({
+      id: `recommendation-${recommendation.boardSlug}`,
+      kind: 'recommendation',
+      title: `Recommended board: #${recommendation.boardSlug}`,
+      summary: recommendation.reason,
+      boardSlug: recommendation.boardSlug,
+      postId: null,
+      createdAt: now(),
+      actionable: true,
+      read: readSet.has(`recommendation-${recommendation.boardSlug}`),
+    }));
+
+  return [...inviteItems, ...inboxItems, ...recommendationItems]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 8);
+}
+
+async function getBoardMemberships(username) {
+  return db.prepare(`
+    SELECT board_slug AS boardSlug, role, joined_at AS joinedAt
+    FROM board_memberships
+    WHERE username = ?
+    ORDER BY joined_at ASC
+  `).all(username);
+}
+
+async function getBoardInvites(username) {
+  return db.prepare(`
+    SELECT id, board_slug AS boardSlug, inviter, invitee, status, created_at AS createdAt
+    FROM board_invites
+    WHERE invitee = ? OR inviter = ?
+    ORDER BY created_at DESC, id DESC
+  `).all(username, username);
+}
+
+async function getBoardRecommendations(username) {
+  const joined = new Set((await getBoardMemberships(username)).map((item) => item.boardSlug));
+  const recommendations = [];
+
+  for (const boardSlug of boards.filter((item) => !joined.has(item))) {
+    const postCount = await countRows('SELECT COUNT(*) AS count FROM posts WHERE board_slug = ?', boardSlug);
+    const pendingCount = await countRows("SELECT COUNT(*) AS count FROM posts WHERE board_slug = ? AND status = 'Pending Review'", boardSlug);
+    const hasPendingInvite = await countRows("SELECT COUNT(*) AS count FROM board_invites WHERE invitee = ? AND board_slug = ? AND status = 'Pending'", username, boardSlug) > 0;
+    const reason = hasPendingInvite
+      ? 'You already have a pending invite for this board.'
+      : pendingCount > 0
+        ? 'This board has active review traffic and team movement.'
+        : 'Your collaborators are already active in this board.';
+    recommendations.push({ boardSlug, reason, postCount, pendingCount, hasPendingInvite });
+  }
+
+  return recommendations
+    .sort((left, right) => Number(right.hasPendingInvite) - Number(left.hasPendingInvite) || right.postCount - left.postCount || right.pendingCount - left.pendingCount)
+    .slice(0, 3)
+    .map(({ hasPendingInvite, ...rest }) => rest);
+}
+
+async function getSavedSmartLists(username) {
+  return db.prepare(`
+    SELECT id, name, query, status_filter AS statusFilter, risk_filter AS riskFilter, board_slug AS boardSlug, created_at AS createdAt, updated_at AS updatedAt
+    FROM saved_smart_lists
+    WHERE username = ?
+    ORDER BY updated_at DESC, id DESC
+  `).all(username);
+}
+
+async function getUserProfile(username) {
+  const profile = await db.prepare(`
+    SELECT username, display_name AS displayName, title, location, bio, updated_at AS updatedAt
+    FROM user_profiles
+    WHERE username = ?
+  `).get(username);
+  if (profile) return profile;
+  return {
+    username,
+    displayName: username,
+    title: '',
+    location: '',
+    bio: '',
+    updatedAt: now(),
+  };
+}
+
+async function getUserPreferences(username) {
+  const prefs = await db.prepare(`
+    SELECT theme, notifications_enabled AS notificationsEnabled, default_board_slug AS defaultBoardSlug, digest_cadence AS digestCadence, updated_at AS updatedAt
+    FROM user_preferences
+    WHERE username = ?
+  `).get(username);
+  if (prefs) {
+    return { ...prefs, notificationsEnabled: !!prefs.notificationsEnabled };
+  }
+  return {
+    theme: 'System',
+    notificationsEnabled: true,
+    defaultBoardSlug: 'all-company',
+    digestCadence: 'Daily',
+    updatedAt: now(),
+  };
+}
+
+async function getUserOnboarding(username) {
+  const record = await db.prepare(`
+    SELECT
+      profile_completed AS profileCompleted,
+      joined_board AS joinedBoard,
+      saved_smart_list AS savedSmartList,
+      reviewed_post AS reviewedPost,
+      updated_at AS updatedAt
+    FROM user_onboarding
+    WHERE username = ?
+  `).get(username);
+  if (record) {
+    return {
+      ...record,
+      profileCompleted: !!record.profileCompleted,
+      joinedBoard: !!record.joinedBoard,
+      savedSmartList: !!record.savedSmartList,
+      reviewedPost: !!record.reviewedPost,
+    };
+  }
+  return {
+    profileCompleted: false,
+    joinedBoard: false,
+    savedSmartList: false,
+    reviewedPost: false,
+    updatedAt: now(),
+  };
+}
+
+async function updateUserOnboarding(username, patch = {}) {
+  const current = await getUserOnboarding(username);
+  const next = {
+    profileCompleted: patch.profileCompleted ?? current.profileCompleted,
+    joinedBoard: patch.joinedBoard ?? current.joinedBoard,
+    savedSmartList: patch.savedSmartList ?? current.savedSmartList,
+    reviewedPost: patch.reviewedPost ?? current.reviewedPost,
+    updatedAt: now(),
+  };
+  await db.prepare(`
+    INSERT INTO user_onboarding (username, profile_completed, joined_board, saved_smart_list, reviewed_post, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(username) DO UPDATE SET
+      profile_completed = excluded.profile_completed,
+      joined_board = excluded.joined_board,
+      saved_smart_list = excluded.saved_smart_list,
+      reviewed_post = excluded.reviewed_post,
+      updated_at = excluded.updated_at
+  `).run(
+    username,
+    next.profileCompleted ? 1 : 0,
+    next.joinedBoard ? 1 : 0,
+    next.savedSmartList ? 1 : 0,
+    next.reviewedPost ? 1 : 0,
+    next.updatedAt,
+  );
+  return getUserOnboarding(username);
+}
+
+async function mapPostRow(post) {
+  return {
+    id: post.id,
+    author: post.author,
+    content: post.content,
+    boardSlug: post.board_slug,
+    visibility: post.visibility,
+    status: post.status,
+    riskLevel: post.risk_level,
+    createdAt: post.created_at,
+    updatedAt: post.updated_at,
+    tasks: await getPostTasks(post.id),
+    comments: await getComments(post.id),
+  };
+}
+
+async function getPosts() {
+  const posts = await db.prepare(`
+    SELECT id, author, content, board_slug AS boardSlug, visibility, status, risk_level AS riskLevel, created_at AS createdAt, updated_at AS updatedAt
+    FROM posts
+    ORDER BY created_at DESC, id DESC
+  `).all();
+
+  return Promise.all(posts.map(async (post) => ({
+    ...post,
+    tasks: await getPostTasks(post.id),
+    comments: await getComments(post.id),
+  })));
+}
+
+async function getPostOr404(res, id) {
+  const post = await db.prepare('SELECT * FROM posts WHERE id = ?').get(id);
+  if (!post) {
+    res.status(404).json({ error: 'Post not found' });
+    return null;
+  }
+  return post;
+}
+
+await initializeDatabase();
+
+const app = express();
+const allowedOrigin = process.env.CORS_ORIGIN || '*';
+app.use(cors({ origin: allowedOrigin === '*' ? true : allowedOrigin }));
+app.use(express.json());
+app.use(monitoringRequestMiddleware);
+
+app.get('/health', (_req, res) => res.json({ ok: true, database: db.dialect }));
+app.get('/meta', (_req, res) => res.json({
+  roles,
+  reviewRoleByLevel,
+  workflow: ['Publish directly', 'Level 1 review', 'Level 1 + 2 review', 'Level 1 + 2 + 3 review'],
+  riskLevels: ['None', 'Low', 'Medium', 'High'],
+}));
+
+app.post('/auth/login', asyncHandler(async (req, res) => {
+  const username = String(req.body?.username ?? '').trim() || 'guest.user';
+  const role = roles.includes(req.body?.role) ? req.body.role : 'Member';
+  const sessionId = crypto.randomUUID();
+  await db.prepare('INSERT INTO sessions (id, username, role, created_at) VALUES (?, ?, ?, ?)').run(sessionId, username, role, now());
+  await log('login', { username, role, sessionId });
+  res.json({ user: username, role, sessionId });
+}));
+
+app.post('/auth/logout', asyncHandler(async (req, res) => {
+  const sessionId = String(req.body?.sessionId ?? '');
+  await db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+  await log('logout', { sessionId });
+  res.json({ ok: true });
+}));
+
+app.get('/users', asyncHandler(async (req, res) => {
+  if (!isAllowed(req, ['Administrator'])) return rejectForbidden(res, 'Administrator only');
+  const users = await db.prepare('SELECT username, role, active FROM users ORDER BY username ASC').all();
+  res.json(users.map((user) => ({ ...user, active: !!user.active })));
+}));
+
+app.post('/users', asyncHandler(async (req, res) => {
+  if (!isAllowed(req, ['Administrator'])) return rejectForbidden(res, 'Administrator only');
+  const username = String(req.body?.username ?? '').trim();
+  if (!username) return res.status(400).json({ error: 'username required' });
+  const role = roles.includes(req.body?.role) ? req.body.role : 'Viewer';
+  await db.prepare(`
+    INSERT INTO users (username, role, active)
+    VALUES (?, ?, 1)
+    ON CONFLICT(username) DO UPDATE SET role = excluded.role, active = 1
+  `).run(username, role);
+  await log('create_user', { username, role });
+  res.status(201).json({ username, role, active: true });
+}));
+
+app.get('/keyword-rules', asyncHandler(async (_req, res) => {
+  res.json(await keywordRules());
+}));
+
+app.post('/keyword-rules', asyncHandler(async (req, res) => {
+  if (!isAllowed(req, ['Administrator', 'Moderator'])) return rejectForbidden(res, 'Manager only');
+  const keyword = String(req.body?.keyword ?? '').trim().toLowerCase();
+  const riskLevel = ['Low', 'Medium', 'High'].includes(req.body?.riskLevel) ? req.body.riskLevel : 'Low';
+  if (!keyword) return res.status(400).json({ error: 'keyword required' });
+  const result = await db.prepare(`
+    INSERT INTO moderation_rules (keyword, risk_level, active, created_by, created_at)
+    VALUES (?, ?, 1, ?, ?)
+    ON CONFLICT(keyword) DO UPDATE SET risk_level = excluded.risk_level, active = 1
+  `).run(keyword, riskLevel, userFrom(req), now());
+  await log('upsert_keyword_rule', { username: userFrom(req), role: roleFrom(req) });
+  const persistedRule = (result.lastInsertRowid && await getKeywordRuleById(result.lastInsertRowid))
+    ?? await db.prepare('SELECT id FROM moderation_rules WHERE keyword = ?').get(keyword);
+  res.status(201).json(await getKeywordRuleById(persistedRule.id));
+}));
+
+app.patch('/keyword-rules/:id/toggle', asyncHandler(async (req, res) => {
+  if (!isAllowed(req, ['Administrator', 'Moderator'])) return rejectForbidden(res, 'Manager only');
+  const rule = await db.prepare('SELECT * FROM moderation_rules WHERE id = ?').get(req.params.id);
+  if (!rule) return res.status(404).json({ error: 'Rule not found' });
+  const active = rule.active ? 0 : 1;
+  await db.prepare('UPDATE moderation_rules SET active = ? WHERE id = ?').run(active, req.params.id);
+  res.json(await getKeywordRuleById(req.params.id));
+}));
+
+app.get('/posts', asyncHandler(async (_req, res) => {
+  res.json(await getPosts());
+}));
+
+app.post('/posts', asyncHandler(async (req, res) => {
+  if (!isAllowed(req, ['Administrator', 'Moderator', 'Auditor', 'Reviewer', 'Approver', 'Member'])) {
+    return rejectForbidden(res, 'Company users only');
+  }
+  const payload = req.body ?? {};
+  const content = String(payload.content ?? '').trim();
+  if (!content) return res.status(400).json({ error: 'content required' });
+  const author = String(payload.author ?? userFrom(req)).trim() || userFrom(req);
+  const boardSlug = boards.includes(String(payload.boardSlug ?? '').trim()) ? String(payload.boardSlug).trim() : 'all-company';
+  const visibility = String(payload.visibility ?? 'Public');
+  const detected = await detectRisk(content);
+  const status = detected.levels > 0 ? 'Pending Review' : 'Published';
+  const post = {
+    id: `POST-${1000 + await countRows('SELECT COUNT(*) AS count FROM posts') + 1}`,
+    author,
+    content,
+    boardSlug,
+    visibility,
+    status,
+    riskLevel: detected.riskLevel,
+    createdAt: now(),
+    updatedAt: now(),
+  };
+
+  await db.prepare(`
+    INSERT INTO posts (id, author, content, board_slug, visibility, status, risk_level, created_at, updated_at)
+    VALUES (@id, @author, @content, @boardSlug, @visibility, @status, @riskLevel, @createdAt, @updatedAt)
+  `).run(post);
+
+  for (let level = 1; level <= detected.levels; level += 1) {
+    await db.prepare(`
+      INSERT INTO post_reviews (post_id, level, reviewer_role, status, reviewer, note, created_at, reviewed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      post.id,
+      level,
+      reviewRoleByLevel[level],
+      'Pending',
+      null,
+      `${detected.riskLevel} keyword trigger`,
+      now(),
+      null,
+    );
+  }
+
+  await log('create_post', { username: author, role: roleFrom(req), postId: post.id });
+  res.status(201).json({
+    ...post,
+    tasks: await getPostTasks(post.id),
+    comments: [],
+    matchedKeywords: detected.matches.map((item) => item.keyword),
+  });
+}));
+
+app.get('/posts/:id', asyncHandler(async (req, res) => {
+  const post = await getPostOr404(res, req.params.id);
+  if (!post) return;
+  res.json(await mapPostRow(post));
+}));
+
+async function handleTaskAction(req, res, nextStatus, actionName) {
+  const post = await getPostOr404(res, req.params.id);
+  if (!post) return;
+  const task = await db.prepare(`
+    SELECT * FROM post_reviews
+    WHERE post_id = ? AND status = 'Pending'
+    ORDER BY level ASC
+    LIMIT 1
+  `).get(req.params.id);
+  if (!task) return res.status(400).json({ error: 'No pending task' });
+  if (roleFrom(req) !== task.reviewer_role && roleFrom(req) !== 'Administrator') {
+    return rejectForbidden(res, `${task.reviewer_role} required`);
+  }
+  const reviewer = userFrom(req);
+  await db.prepare(`
+    UPDATE post_reviews
+    SET status = ?, reviewer = ?, note = ?, reviewed_at = ?
+    WHERE id = ?
+  `).run(nextStatus, reviewer, String(req.body?.note ?? ''), now(), task.id);
+
+  const pendingCount = await countRows("SELECT COUNT(*) AS count FROM post_reviews WHERE post_id = ? AND status = 'Pending'", req.params.id);
+  const approvedCount = await countRows("SELECT COUNT(*) AS count FROM post_reviews WHERE post_id = ? AND status = 'Approved'", req.params.id);
+  const totalCount = await countRows('SELECT COUNT(*) AS count FROM post_reviews WHERE post_id = ?', req.params.id);
+  const finalStatus = approvedCount === totalCount && totalCount > 0 ? 'Published' : pendingCount > 0 ? 'Pending Review' : 'Published';
+  await db.prepare('UPDATE posts SET status = ?, updated_at = ? WHERE id = ?').run(finalStatus, now(), req.params.id);
+  await log(actionName, { username: reviewer, role: roleFrom(req), postId: req.params.id, taskId: task.id });
+  await updateUserOnboarding(reviewer, { reviewedPost: true });
+  const updatedPost = await db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
+  res.json(await mapPostRow(updatedPost));
+}
+
+app.patch('/posts/:id/approve', asyncHandler(async (req, res) => {
+  await handleTaskAction(req, res, 'Approved', 'approve_post');
+}));
+
+app.patch('/posts/:id/reject', asyncHandler(async (req, res) => {
+  const post = await getPostOr404(res, req.params.id);
+  if (!post) return;
+  const task = await db.prepare(`
+    SELECT * FROM post_reviews
+    WHERE post_id = ? AND status = 'Pending'
+    ORDER BY level ASC
+    LIMIT 1
+  `).get(req.params.id);
+  if (!task) return res.status(400).json({ error: 'No pending task' });
+  if (roleFrom(req) !== task.reviewer_role && roleFrom(req) !== 'Administrator') {
+    return rejectForbidden(res, `${task.reviewer_role} required`);
+  }
+  const reviewer = userFrom(req);
+  await db.prepare(`
+    UPDATE post_reviews
+    SET status = ?, reviewer = ?, note = ?, reviewed_at = ?
+    WHERE id = ?
+  `).run('Rejected', reviewer, String(req.body?.note ?? 'Rejected for revision'), now(), task.id);
+  await db.prepare('UPDATE posts SET status = ?, updated_at = ? WHERE id = ?').run('Rejected', now(), req.params.id);
+  await log('reject_post', { username: reviewer, role: roleFrom(req), postId: req.params.id, taskId: task.id });
+  await updateUserOnboarding(reviewer, { reviewedPost: true });
+  const updatedPost = await db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
+  res.json(await mapPostRow(updatedPost));
+}));
+
+app.patch('/posts/:id/publish', asyncHandler(async (req, res) => {
+  const post = await getPostOr404(res, req.params.id);
+  if (!post) return;
+  if (!isAllowed(req, ['Administrator', 'Moderator', 'Auditor', 'Reviewer', 'Approver', 'Member'])) {
+    return rejectForbidden(res, 'Company users only');
+  }
+  const risk = await db.prepare('SELECT risk_level AS riskLevel FROM posts WHERE id = ?').get(req.params.id);
+  if (risk.riskLevel !== 'None') return res.status(400).json({ error: 'This post requires review' });
+  await db.prepare('UPDATE posts SET status = ?, updated_at = ? WHERE id = ?').run('Published', now(), req.params.id);
+  const updatedPost = await db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
+  res.json(await mapPostRow(updatedPost));
+}));
+
+app.get('/posts/:id/history', asyncHandler(async (req, res) => {
+  const post = await getPostOr404(res, req.params.id);
+  if (!post) return;
+  res.json(await getPostTasks(req.params.id));
+}));
+
+app.get('/posts/:id/comments', asyncHandler(async (req, res) => {
+  const post = await getPostOr404(res, req.params.id);
+  if (!post) return;
+  res.json(await getComments(req.params.id));
+}));
+
+app.post('/posts/:id/comments', asyncHandler(async (req, res) => {
+  const post = await getPostOr404(res, req.params.id);
+  if (!post) return;
+  const author = String(req.body?.author ?? userFrom(req)).trim() || userFrom(req);
+  const comment = String(req.body?.comment ?? '').trim();
+  if (!comment) return res.status(400).json({ error: 'comment required' });
+  const createdAt = now();
+  await db.prepare(`
+    INSERT INTO post_comments (post_id, author, comment, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run(req.params.id, author, comment, createdAt);
+  const inserted = await db.prepare(`
+    SELECT id
+    FROM post_comments
+    WHERE post_id = ? AND author = ? AND comment = ? AND created_at = ?
+    ORDER BY id DESC
+    LIMIT 1
+  `).get(req.params.id, author, comment, createdAt);
+  await log('comment_post', { username: author, postId: req.params.id });
+  res.status(201).json({ id: inserted?.id ?? null, postId: req.params.id, author, comment, createdAt });
+}));
+
+app.get('/review-tasks', asyncHandler(async (_req, res) => {
+  const tasks = await db.prepare(`
+    SELECT id, post_id AS postId, level, reviewer_role AS reviewerRole, status, reviewer, note, created_at AS createdAt, reviewed_at AS reviewedAt
+    FROM post_reviews
+    ORDER BY status ASC, level ASC, created_at DESC
+  `).all();
+  res.json(tasks);
+}));
+
+app.get('/reports/summary', asyncHandler(async (_req, res) => {
+  res.json({
+    totalPosts: await countRows('SELECT COUNT(*) AS count FROM posts'),
+    published: await countRows("SELECT COUNT(*) AS count FROM posts WHERE status = 'Published'"),
+    pending: await countRows("SELECT COUNT(*) AS count FROM posts WHERE status = 'Pending Review'"),
+    rejected: await countRows("SELECT COUNT(*) AS count FROM posts WHERE status = 'Rejected'"),
+    rules: await countRows('SELECT COUNT(*) AS count FROM moderation_rules WHERE active = 1'),
+  });
+}));
+
+app.get('/activity-logs', asyncHandler(async (_req, res) => {
+  const logs = await db.prepare(`
+    SELECT id, action, username, role, post_id AS postId, task_id AS taskId, session_id AS sessionId, at
+    FROM activity_logs
+    ORDER BY at DESC
+    LIMIT 100
+  `).all();
+  res.json(logs);
+}));
+
+app.get('/mentions', asyncHandler(async (req, res) => {
+  res.json(await buildMentionItems(userFrom(req)));
+}));
+
+app.get('/inbox', asyncHandler(async (req, res) => {
+  res.json(await buildInboxItems(userFrom(req), roleFrom(req)));
+}));
+
+app.get('/notifications', asyncHandler(async (req, res) => {
+  res.json(await buildNotifications(userFrom(req), roleFrom(req)));
+}));
+
+app.patch('/notifications/:id/read', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const notificationId = String(req.params.id ?? '').trim();
+  if (!notificationId) return res.status(400).json({ error: 'notification id required' });
+  await db.prepare(`
+    INSERT INTO notification_reads (username, notification_id, read_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(username, notification_id) DO UPDATE SET
+      read_at = excluded.read_at
+  `).run(username, notificationId, now());
+  await log('mark_notification_read', { username, role: roleFrom(req) });
+  res.json(await buildNotifications(username, roleFrom(req)));
+}));
+
+app.get('/board-memberships', asyncHandler(async (req, res) => {
+  res.json(await getBoardMemberships(userFrom(req)));
+}));
+
+app.post('/board-memberships', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const boardSlug = String(req.body?.boardSlug ?? '').trim();
+  if (!boards.includes(boardSlug)) return res.status(400).json({ error: 'Unknown board' });
+  await db.prepare(`
+    INSERT INTO board_memberships (username, board_slug, role, joined_at)
+    VALUES (?, ?, 'Member', ?)
+    ON CONFLICT(username, board_slug) DO NOTHING
+  `).run(username, boardSlug, now());
+  await log('join_board', { username, role: roleFrom(req) });
+  await updateUserOnboarding(username, { joinedBoard: true });
+  res.status(201).json(await getBoardMemberships(username));
+}));
+
+app.delete('/board-memberships/:slug', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const boardSlug = String(req.params.slug ?? '').trim();
+  await db.prepare('DELETE FROM board_memberships WHERE username = ? AND board_slug = ?').run(username, boardSlug);
+  await log('leave_board', { username, role: roleFrom(req) });
+  res.json(await getBoardMemberships(username));
+}));
+
+app.get('/board-invites', asyncHandler(async (req, res) => {
+  res.json(await getBoardInvites(userFrom(req)));
+}));
+
+app.post('/board-invites', asyncHandler(async (req, res) => {
+  const inviter = userFrom(req);
+  const boardSlug = String(req.body?.boardSlug ?? '').trim();
+  const invitee = String(req.body?.invitee ?? '').trim();
+  if (!boards.includes(boardSlug)) return res.status(400).json({ error: 'Unknown board' });
+  if (!invitee) return res.status(400).json({ error: 'invitee required' });
+  const inviterMembership = await db.prepare('SELECT * FROM board_memberships WHERE username = ? AND board_slug = ?').get(inviter, boardSlug);
+  if (!inviterMembership) return res.status(403).json({ error: 'Join the board before inviting others' });
+  const existingPendingInvite = await db.prepare(`
+    SELECT * FROM board_invites
+    WHERE board_slug = ? AND inviter = ? AND invitee = ? AND status = 'Pending'
+  `).get(boardSlug, inviter, invitee);
+  if (existingPendingInvite) {
+    return res.json(await getBoardInvites(inviter));
+  }
+  await db.prepare(`
+    INSERT INTO board_invites (board_slug, inviter, invitee, status, created_at)
+    VALUES (?, ?, ?, 'Pending', ?)
+  `).run(boardSlug, inviter, invitee, now());
+  await log('invite_board_member', { username: inviter, role: roleFrom(req) });
+  res.status(201).json(await getBoardInvites(inviter));
+}));
+
+app.patch('/board-invites/:id', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const action = req.body?.action === 'decline' ? 'Declined' : 'Accepted';
+  const invite = await db.prepare('SELECT * FROM board_invites WHERE id = ?').get(req.params.id);
+  if (!invite) return res.status(404).json({ error: 'Invite not found' });
+  if (invite.invitee !== username) return res.status(403).json({ error: 'Invitee only' });
+  await db.prepare('UPDATE board_invites SET status = ? WHERE id = ?').run(action, req.params.id);
+  if (action === 'Accepted') {
+    await db.prepare(`
+      INSERT INTO board_memberships (username, board_slug, role, joined_at)
+      VALUES (?, ?, 'Member', ?)
+      ON CONFLICT(username, board_slug) DO NOTHING
+    `).run(username, invite.board_slug, now());
+    await updateUserOnboarding(username, { joinedBoard: true });
+  }
+  await log(action === 'Accepted' ? 'accept_board_invite' : 'decline_board_invite', { username, role: roleFrom(req) });
+  res.json(await getBoardInvites(username));
+}));
+
+app.delete('/board-invites/:id', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const invite = await db.prepare('SELECT * FROM board_invites WHERE id = ?').get(req.params.id);
+  if (!invite) return res.status(404).json({ error: 'Invite not found' });
+  if (invite.inviter !== username) return res.status(403).json({ error: 'Inviter only' });
+  if (invite.status !== 'Pending') return res.status(400).json({ error: 'Only pending invites can be withdrawn' });
+  await db.prepare('DELETE FROM board_invites WHERE id = ?').run(req.params.id);
+  await log('withdraw_board_invite', { username, role: roleFrom(req) });
+  res.json(await getBoardInvites(username));
+}));
+
+app.get('/board-recommendations', asyncHandler(async (req, res) => {
+  res.json(await getBoardRecommendations(userFrom(req)));
+}));
+
+app.get('/saved-smart-lists', asyncHandler(async (req, res) => {
+  res.json(await getSavedSmartLists(userFrom(req)));
+}));
+
+app.post('/saved-smart-lists', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const name = String(req.body?.name ?? '').trim();
+  if (!name) return res.status(400).json({ error: 'name required' });
+  const query = String(req.body?.query ?? '');
+  const statusFilter = String(req.body?.statusFilter ?? '');
+  const riskFilter = String(req.body?.riskFilter ?? '');
+  const boardSlug = String(req.body?.boardSlug ?? '');
+  if (boardSlug && !boards.includes(boardSlug)) return res.status(400).json({ error: 'Unknown board' });
+  await db.prepare(`
+    INSERT INTO saved_smart_lists (username, name, query, status_filter, risk_filter, board_slug, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(username, name, query, statusFilter, riskFilter, boardSlug, now(), now());
+  await log('save_smart_list', { username, role: roleFrom(req) });
+  await updateUserOnboarding(username, { savedSmartList: true });
+  res.status(201).json(await getSavedSmartLists(username));
+}));
+
+app.delete('/saved-smart-lists/:id', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  await db.prepare('DELETE FROM saved_smart_lists WHERE id = ? AND username = ?').run(req.params.id, username);
+  await log('delete_smart_list', { username, role: roleFrom(req) });
+  res.json(await getSavedSmartLists(username));
+}));
+
+app.get('/me/profile', asyncHandler(async (req, res) => {
+  res.json(await getUserProfile(userFrom(req)));
+}));
+
+app.put('/me/profile', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const displayName = String(req.body?.displayName ?? '').trim() || username;
+  const title = String(req.body?.title ?? '').trim();
+  const location = String(req.body?.location ?? '').trim();
+  const bio = String(req.body?.bio ?? '').trim();
+  await db.prepare(`
+    INSERT INTO user_profiles (username, display_name, title, location, bio, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(username) DO UPDATE SET
+      display_name = excluded.display_name,
+      title = excluded.title,
+      location = excluded.location,
+      bio = excluded.bio,
+      updated_at = excluded.updated_at
+  `).run(username, displayName, title, location, bio, now());
+  await log('update_profile', { username, role: roleFrom(req) });
+  await updateUserOnboarding(username, { profileCompleted: Boolean(displayName && title && bio) });
+  res.json(await getUserProfile(username));
+}));
+
+app.get('/me/preferences', asyncHandler(async (req, res) => {
+  res.json(await getUserPreferences(userFrom(req)));
+}));
+
+app.get('/me/onboarding', asyncHandler(async (req, res) => {
+  res.json(await getUserOnboarding(userFrom(req)));
+}));
+
+app.put('/me/preferences', asyncHandler(async (req, res) => {
+  const username = userFrom(req);
+  const theme = ['System', 'Light', 'Dark'].includes(req.body?.theme) ? req.body.theme : 'System';
+  const notificationsEnabled = req.body?.notificationsEnabled === false ? 0 : 1;
+  const defaultBoardSlug = boards.includes(String(req.body?.defaultBoardSlug ?? '')) ? String(req.body.defaultBoardSlug) : 'all-company';
+  const digestCadence = ['Instant', 'Daily', 'Weekly'].includes(req.body?.digestCadence) ? req.body.digestCadence : 'Daily';
+  await db.prepare(`
+    INSERT INTO user_preferences (username, theme, notifications_enabled, default_board_slug, digest_cadence, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(username) DO UPDATE SET
+      theme = excluded.theme,
+      notifications_enabled = excluded.notifications_enabled,
+      default_board_slug = excluded.default_board_slug,
+      digest_cadence = excluded.digest_cadence,
+      updated_at = excluded.updated_at
+  `).run(username, theme, notificationsEnabled, defaultBoardSlug, digestCadence, now());
+  await log('update_preferences', { username, role: roleFrom(req) });
+  res.json(await getUserPreferences(username));
+}));
+
+app.use(monitoringErrorMiddleware);
+
+const port = process.env.PORT || 3001;
+app.listen(port, () => console.log(`Social moderation backend listening on http://localhost:${port} using ${db.dialect}`));

@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: erp-audit
+  namespace: erp-audit
+spec:
+  rules:
+    - host: erp-audit.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: erp-audit-client
+                port:
+                  number: 80

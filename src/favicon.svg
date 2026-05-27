@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Company Social Platform">
+  <rect width="128" height="128" rx="28" fill="#8a5a2b"/>
+  <circle cx="64" cy="46" r="18" fill="#fffaf3"/>
+  <path d="M34 98c5-18 19-28 30-28s25 10 30 28" fill="#fffaf3"/>
+  <path d="M44 60h40" stroke="#fffaf3" stroke-width="6" stroke-linecap="round"/>
+  <path d="M44 74h28" stroke="#fffaf3" stroke-width="6" stroke-linecap="round"/>
+</svg>

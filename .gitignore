@@ -1,0 +1,37 @@
+# Local-only guidance
+guide_for_showcase.md
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Installed dependencies
+node_modules/
+server/node_modules/
+
+# Build and verification output
+build/
+dist/
+.angular/
+coverage/
+playwright-report/
+test-results/
+tests/artifacts/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Local runtime databases
+server/*.db
+server/*.db-shm
+server/*.db-wal

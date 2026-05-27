@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erp-audit-server
+  namespace: erp-audit
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: erp-audit-server
+  template:
+    metadata:
+      labels:
+        app: erp-audit-server
+    spec:
+      containers:
+        - name: server
+          image: erp-audit-server:latest
+          ports:
+            - containerPort: 3001

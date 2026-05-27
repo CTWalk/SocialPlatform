@@ -1,0 +1,63 @@
+export const MM = {
+  // Backgrounds
+  bg: '#F3F1ED',
+  bgCard: 'rgba(0,0,0,0.04)',
+  bgChip: '#E6E4DE',
+  bgChipActive: '#FFFFFF',
+  bgInput: 'rgba(0,0,0,0.04)',
+  bgFab: 'rgba(0,0,0,0.07)',
+  bgSettingsRow: '#FFFFFF',
+  bgStrong: '#E6E4DE',
+  bgGrouped: 'rgba(0,0,0,0.04)',
+  surface: 'rgba(255,255,255,0.6)',
+  surfaceSolid: '#ffffff',
+  surfaceMuted: 'rgba(0,0,0,0.03)',
+  surfaceHover: 'rgba(201,169,97,0.18)',
+  // Separators
+  sep: 'rgba(0,0,0,0.08)',
+  sepFaint: 'rgba(0,0,0,0.05)',
+  line: 'rgba(0,0,0,0.08)',
+  lineStrong: 'rgba(0,0,0,0.12)',
+  sepTight: 'rgba(0,0,0,0.05)',
+  // Labels
+  label: '#1A1A1A',
+  labelSecondary: '#6E6E6E',
+  labelTertiary: '#A5A5A5',
+  ink: '#1A1A1A',
+  muted: '#6E6E6E',
+  mutedSoft: '#A5A5A5',
+  // Accents (warm gold)
+  gold: '#C9A961',
+  goldDark: '#B08D3F',
+  goldGrad: 'linear-gradient(180deg, #E0BD66 0%, #C9A961 100%)',
+  goldBannerBg: 'rgba(201,169,97,0.18)',
+  blueIce: '#B6CFD8',
+  accent: '#C9A961',
+  accent2: '#E0BD66',
+  accentTint: 'rgba(201,169,97,0.18)',
+  // Semantic
+  heart: '#E0426B',
+  liked: '#E0426B',
+  reposted: '#34A871',
+  // Status
+  success: '#34C759',
+  successTint: 'rgba(52,199,89,0.16)',
+  warning: '#FF9500',
+  warningTint: 'rgba(255,149,0,0.16)',
+  danger: '#E0426B',
+  dangerTint: 'rgba(224,66,107,0.14)',
+  purple: '#AF52DE',
+  purpleTint: 'rgba(175,82,222,0.14)',
+  // Shadows
+  shadowSoft: '0 20px 60px rgba(0,0,0,0.10)',
+  shadowCard: '0 8px 24px rgba(0,0,0,0.06)',
+  // Radius
+  radiusXl: '24px',
+  radiusLg: '18px',
+  radiusMd: '14px',
+  radiusSm: '10px',
+  // Typography
+  sans: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif',
+  serif: '"Charter", "Iowan Old Style", "Apple Garamond", Georgia, serif',
+  mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+} as const;

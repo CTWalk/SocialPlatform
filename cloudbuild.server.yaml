@@ -1,0 +1,21 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - Dockerfile.server
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVER_IMAGE}:latest
+      - .
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVER_IMAGE}:latest
+
+substitutions:
+  _REGION: asia-east1
+  _REPOSITORY: social-platform
+  _SERVER_IMAGE: social-platform-server
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+

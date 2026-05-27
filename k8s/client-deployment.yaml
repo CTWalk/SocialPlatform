@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erp-audit-client
+  namespace: erp-audit
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: erp-audit-client
+  template:
+    metadata:
+      labels:
+        app: erp-audit-client
+    spec:
+      containers:
+        - name: client
+          image: erp-audit-client:latest
+          ports:
+            - containerPort: 80

@@ -1,0 +1,24 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    environment:
+      PORT: 3001
+      DB_FILE: /app/server/social_platform.db
+      CORS_ORIGIN: http://127.0.0.1:4201
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./server:/app/server
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        NG_CONFIGURATION: production
+    ports:
+      - "4201:80"
+    depends_on:
+      - server

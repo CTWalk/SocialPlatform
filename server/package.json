@@ -1,0 +1,18 @@
+{
+  "name": "company-social-platform-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "start:sqlite": "node index.js",
+    "start:postgres": "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/social_platform node index.js"
+  },
+  "dependencies": {
+    "@sentry/node": "^10.53.1",
+    "better-sqlite3": "^12.10.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "pg": "^8.16.3"
+  }
+}

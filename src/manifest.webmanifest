@@ -1,0 +1,16 @@
+{
+  "name": "Company Social Platform",
+  "short_name": "Social Platform",
+  "theme_color": "#8a5a2b",
+  "background_color": "#f4efe6",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

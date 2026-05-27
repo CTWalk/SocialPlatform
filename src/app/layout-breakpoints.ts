@@ -1,0 +1,1 @@
+export const SHELL_MOBILE_MAX_WIDTH = 820;
