@@ -1,0 +1,413 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/release.yml'
+      - 'src/**'
+      - 'server/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'ios/**'
+      - 'android/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig.json'
+      - 'tsconfig.app.json'
+      - 'playwright.config.ts'
+      - 'capacitor.config.ts'
+      - 'Dockerfile.client'
+      - 'Dockerfile.server'
+      - 'docker-compose.yml'
+      - 'nginx.conf'
+      - 'Makefile'
+  push:
+    branches:
+      - develop
+      - main
+      - 'release/**'
+    paths:
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/release.yml'
+      - 'src/**'
+      - 'server/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'ios/**'
+      - 'android/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig.json'
+      - 'tsconfig.app.json'
+      - 'playwright.config.ts'
+      - 'capacitor.config.ts'
+      - 'Dockerfile.client'
+      - 'Dockerfile.server'
+      - 'docker-compose.yml'
+      - 'nginx.conf'
+      - 'Makefile'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  NODE_VERSION: '22'
+  API_BASE_URL: http://127.0.0.1:3001
+  E2E_BASE_URL: http://127.0.0.1:4201
+  CORS_ORIGIN: http://127.0.0.1:4201
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify web build
+        run: npm run verify:web
+
+  environment-builds:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - environment: sit
+            script: build:sit
+          - environment: uat
+            script: build:uat
+          - environment: preprod
+            script: build:preprod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build ${{ matrix.environment }}
+        run: npm run ${{ matrix.script }}
+      - name: Upload ${{ matrix.environment }} bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.environment }}
+          path: dist/company-social-platform
+
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install backend dependencies
+        run: npm ci --prefix server
+      - name: Start backend
+        run: ./scripts/ci-start-backend.sh "$RUNNER_TEMP"
+      - name: Run API tests
+        run: npm run verify:api
+      - name: Stop backend
+        if: always()
+        run: ./scripts/ci-stop-backend.sh "$RUNNER_TEMP"
+
+  db-integrity-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: social_platform_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d social_platform_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/social_platform_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install backend dependencies
+        run: npm ci --prefix server
+      - name: Run DB integrity suite
+        run: npm run verify:db
+      - name: Upload DB verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-verification-artifacts
+          path: tests/artifacts/db
+
+  perf-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install backend dependencies
+        run: npm ci --prefix server
+      - name: Start backend
+        run: ./scripts/ci-start-backend.sh "$RUNNER_TEMP"
+      - name: Run API performance smoke
+        run: npm run verify:perf
+      - name: Stop backend
+        if: always()
+        run: ./scripts/ci-stop-backend.sh "$RUNNER_TEMP"
+      - name: Upload performance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-performance-artifacts
+          path: tests/artifacts/performance
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install backend dependencies
+        run: npm ci --prefix server
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright e2e tests with backend lifecycle
+        run: |
+          trap './scripts/ci-stop-backend.sh "$RUNNER_TEMP"' EXIT
+          ./scripts/ci-start-backend.sh "$RUNNER_TEMP"
+          npm run verify:e2e
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            test-results
+            playwright-report
+            tests/artifacts/self-healing
+
+  mobile-layout-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install backend dependencies
+        run: npm ci --prefix server
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Run mobile layout snapshots with backend lifecycle
+        run: |
+          trap './scripts/ci-stop-backend.sh "$RUNNER_TEMP"' EXIT
+          ./scripts/ci-start-backend.sh "$RUNNER_TEMP"
+          npm run verify:mobile-layout
+      - name: Upload mobile layout snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-layout-snapshots
+          path: |
+            test-results
+            tests/screenshots/mobile
+
+  ios-build-and-test:
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release/') }}
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build iOS shell
+        run: npm run ios:build:prod
+      - name: Run iOS simulator tests
+        run: npm run ios:test:sim
+      - name: Package iOS Device Farm artifacts
+        run: npm run ios:package:devicefarm
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-artifacts
+          path: build/ios
+
+  android-build-and-test:
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Android shell
+        run: npm run android:build:prod
+      - name: Run Android emulator tests
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_8
+          script: npm run android:test:emulator
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-artifacts
+          path: android/app/build/outputs
+
+  ios-device-farm:
+    needs: ios-build-and-test
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release/') }}
+    runs-on: ubuntu-latest
+    env:
+      AWS_DEVICE_FARM_PROJECT_ARN: ${{ secrets.AWS_DEVICE_FARM_PROJECT_ARN }}
+      AWS_DEVICE_FARM_DEVICE_POOL_ARN: ${{ secrets.AWS_DEVICE_FARM_DEVICE_POOL_ARN }}
+      AWS_ACCESS_KEY_ID_PRESENT: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+      AWS_SECRET_ACCESS_KEY_PRESENT: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}
+    steps:
+      - id: guard
+        name: Check Device Farm secrets
+        shell: bash
+        run: |
+          if [ -n "${AWS_DEVICE_FARM_PROJECT_ARN}" ] && [ -n "${AWS_DEVICE_FARM_DEVICE_POOL_ARN}" ] && [ "${AWS_ACCESS_KEY_ID_PRESENT}" = "true" ] && [ "${AWS_SECRET_ACCESS_KEY_PRESENT}" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping iOS Device Farm upload because required AWS secrets are not configured."
+          fi
+      - uses: actions/checkout@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+      - uses: actions/download-artifact@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        with:
+          name: ios-build-artifacts
+          path: build/ios
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Upload iOS XCUI package to Device Farm
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        env:
+          AWS_DEVICE_FARM_APP_FILE: build/ios/devicefarm/artifacts/CompanySocialPlatform.ipa
+          AWS_DEVICE_FARM_IOS_TEST_FILE: build/ios/devicefarm/artifacts/CompanySocialPlatformUITests.zip
+        run: npm run ios:test:devicefarm
+
+  android-device-farm:
+    needs: android-build-and-test
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release/') }}
+    runs-on: ubuntu-latest
+    env:
+      AWS_DEVICE_FARM_PROJECT_ARN: ${{ secrets.AWS_DEVICE_FARM_PROJECT_ARN }}
+      AWS_DEVICE_FARM_DEVICE_POOL_ARN: ${{ secrets.AWS_DEVICE_FARM_DEVICE_POOL_ARN }}
+      AWS_ACCESS_KEY_ID_PRESENT: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+      AWS_SECRET_ACCESS_KEY_PRESENT: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}
+    steps:
+      - id: guard
+        name: Check Device Farm secrets
+        shell: bash
+        run: |
+          if [ -n "${AWS_DEVICE_FARM_PROJECT_ARN}" ] && [ -n "${AWS_DEVICE_FARM_DEVICE_POOL_ARN}" ] && [ "${AWS_ACCESS_KEY_ID_PRESENT}" = "true" ] && [ "${AWS_SECRET_ACCESS_KEY_PRESENT}" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Android Device Farm upload because required AWS secrets are not configured."
+          fi
+      - uses: actions/checkout@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+      - uses: actions/download-artifact@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        with:
+          name: android-build-artifacts
+          path: android/app/build/outputs
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Upload Android instrumentation package to Device Farm
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        env:
+          AWS_DEVICE_FARM_ANDROID_APP_FILE: android/app/build/outputs/apk/debug/app-debug.apk
+          AWS_DEVICE_FARM_ANDROID_TEST_FILE: android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+        run: npm run android:test:devicefarm
+
+  android-firebase-testlab:
+    needs: android-build-and-test
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release/') }}
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID_PRESENT: ${{ secrets.GCP_PROJECT_ID != '' }}
+      GCP_SA_KEY_PRESENT: ${{ secrets.GCP_SA_KEY != '' }}
+    steps:
+      - id: guard
+        name: Check Firebase Test Lab secrets
+        shell: bash
+        run: |
+          if [ "${GCP_PROJECT_ID_PRESENT}" = "true" ] && [ "${GCP_SA_KEY_PRESENT}" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Firebase Test Lab upload because required GCP secrets are not configured."
+          fi
+      - uses: actions/checkout@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+      - uses: actions/download-artifact@v4
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        with:
+          name: android-build-artifacts
+          path: android/app/build/outputs
+      - uses: google-github-actions/auth@v2
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - name: Upload Android artifacts to Firebase Test Lab
+        if: ${{ steps.guard.outputs.enabled == 'true' }}
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: npm run android:test:testlab

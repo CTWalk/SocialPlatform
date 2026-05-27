@@ -1,37 +1,39 @@
-# Local-only guidance
-guide_for_showcase.md
-
-# OS and editor files
+.claude/
+.circleci/
+.dockerignore
 .DS_Store
-.idea/
-.vscode/
-
-# Installed dependencies
 node_modules/
-server/node_modules/
-
-# Build and verification output
-build/
 dist/
 .angular/
+.cache/
 coverage/
 playwright-report/
 test-results/
-tests/artifacts/
-
-# Local environment files
+build/
+DerivedData/
+*.xcresult
+*.log
+*.db
+*.db-shm
+*.db-wal
+server/social_platform.db*
+server/*.log
+server/node_modules/
+server/.env
+server/.env.*
+!server/.env.example
 .env
 .env.*
 !.env.example
-!**/.env.example
-
-# Logs
-*.log
+.idea/
+.vscode/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+android/local.properties
+tests/artifacts/
+google-cloud-sdk/
+__pycache__/
 
-# Local runtime databases
-server/*.db
-server/*.db-shm
-server/*.db-wal
+# Local-only guide for future showcase work
+guide_for_showcase.md

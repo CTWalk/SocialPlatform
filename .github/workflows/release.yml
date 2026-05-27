@@ -1,0 +1,233 @@
+name: Release Delivery
+
+on:
+  push:
+    branches:
+      - 'release/**'
+      - main
+    paths:
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/release.yml'
+      - 'src/**'
+      - 'server/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'ios/**'
+      - 'android/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig.json'
+      - 'tsconfig.app.json'
+      - 'playwright.config.ts'
+      - 'capacitor.config.ts'
+      - 'Dockerfile.client'
+      - 'Dockerfile.server'
+      - 'docker-compose.yml'
+      - 'nginx.conf'
+      - 'Makefile'
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: Target environment to package
+        required: true
+        default: sit
+        type: choice
+        options:
+          - sit
+          - uat
+          - preprod
+          - prod
+      package_native:
+        description: Run iOS and Android packaging in addition to the web artifact
+        required: true
+        default: false
+        type: boolean
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  NODE_VERSION: '22'
+
+jobs:
+  resolve-target:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.target.outputs.environment }}
+      environment_label: ${{ steps.target.outputs.environment_label }}
+      angular_config: ${{ steps.target.outputs.angular_config }}
+      artifact_name: ${{ steps.target.outputs.artifact_name }}
+    steps:
+      - id: target
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            env_name="${{ inputs.target_environment }}"
+          else
+            case "${GITHUB_REF_NAME}" in
+              release/uat) env_name="uat" ;;
+              release/preprod) env_name="preprod" ;;
+              main) env_name="prod" ;;
+              *)
+                echo "Unsupported branch: ${GITHUB_REF_NAME}"
+                exit 1
+                ;;
+            esac
+          fi
+          case "$env_name" in
+            prod) angular_config="production" ;;
+            *) angular_config="$env_name" ;;
+          esac
+          case "$env_name" in
+            prod) environment_label="production" ;;
+            *) environment_label="$env_name" ;;
+          esac
+          echo "environment=$env_name" >> "$GITHUB_OUTPUT"
+          echo "environment_label=$environment_label" >> "$GITHUB_OUTPUT"
+          echo "angular_config=$angular_config" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=release-web-$env_name" >> "$GITHUB_OUTPUT"
+
+  package-web:
+    needs: resolve-target
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build:${{ needs.resolve-target.outputs.environment }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ needs.resolve-target.outputs.artifact_name }}
+          path: dist/company-social-platform
+
+  verify-web-bundle:
+    needs:
+      - resolve-target
+      - package-web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.resolve-target.outputs.artifact_name }}
+          path: build/release-web
+      - name: Verify static release bundle
+        run: ./scripts/verify-release-bundle.sh build/release-web
+
+  create-delivery-manifest:
+    needs:
+      - resolve-target
+      - package-web
+      - verify-web-bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.resolve-target.outputs.artifact_name }}
+          path: build/release-web
+      - name: Generate deployment manifest
+        run: |
+          node scripts/generate-deployment-manifest.mjs \
+            --environment "${{ needs.resolve-target.outputs.environment }}" \
+            --environment-label "${{ needs.resolve-target.outputs.environment_label }}" \
+            --angular-config "${{ needs.resolve-target.outputs.angular_config }}" \
+            --artifact-name "${{ needs.resolve-target.outputs.artifact_name }}" \
+            --bundle-path "build/release-web" \
+            --output "build/delivery/deployment-manifest.json"
+      - name: Upload delivery metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: delivery-metadata-${{ needs.resolve-target.outputs.environment }}
+          path: build/delivery
+      - name: Publish manifest summary
+        run: cat build/delivery/deployment-manifest.md >> "$GITHUB_STEP_SUMMARY"
+
+  promote-web-release:
+    needs:
+      - resolve-target
+      - package-web
+      - verify-web-bundle
+      - create-delivery-manifest
+    runs-on: ubuntu-latest
+    concurrency: delivery-${{ needs.resolve-target.outputs.environment_label }}
+    environment:
+      name: ${{ needs.resolve-target.outputs.environment_label }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.resolve-target.outputs.artifact_name }}
+          path: build/release-web
+      - uses: actions/download-artifact@v4
+        with:
+          name: delivery-metadata-${{ needs.resolve-target.outputs.environment }}
+          path: build/delivery
+      - name: Assemble delivery candidate
+        shell: bash
+        run: |
+          candidate_dir="delivery-output/${{ needs.resolve-target.outputs.environment_label }}"
+          mkdir -p "$candidate_dir/web"
+          cp -R build/release-web/. "$candidate_dir/web/"
+          cp build/delivery/deployment-manifest.json "$candidate_dir/"
+          cp build/delivery/deployment-manifest.md "$candidate_dir/"
+      - name: Publish delivery candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: delivery-candidate-${{ needs.resolve-target.outputs.environment }}
+          path: delivery-output/${{ needs.resolve-target.outputs.environment_label }}
+      - name: Summarize delivery promotion
+        shell: bash
+        run: |
+          {
+            echo "## Delivery Promotion"
+            echo
+            echo "- Environment: \`${{ needs.resolve-target.outputs.environment_label }}\`"
+            echo "- Release artifact: \`${{ needs.resolve-target.outputs.artifact_name }}\`"
+            echo "- Delivery bundle: \`delivery-candidate-${{ needs.resolve-target.outputs.environment }}\`"
+            echo "- Verification: static release bundle smoke passed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  package-ios:
+    needs: resolve-target
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package_native }}
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: ./scripts/ios-build.sh ${{ needs.resolve-target.outputs.angular_config }}
+      - run: ./scripts/ios-package-devicefarm.sh ${{ needs.resolve-target.outputs.angular_config }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-ios-${{ needs.resolve-target.outputs.environment }}
+          path: build/ios
+
+  package-android:
+    needs: resolve-target
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package_native }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: ./scripts/android-build.sh ${{ needs.resolve-target.outputs.angular_config }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android-${{ needs.resolve-target.outputs.environment }}
+          path: android/app/build/outputs
