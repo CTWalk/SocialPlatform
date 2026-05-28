@@ -1,6 +1,6 @@
 # Company Social Platform
 
-This repository shows a social platform prototype together with the test and delivery work used to verify it. The product simulates an internal company discussion space where posts may be published directly or routed into a layered review flow when they match moderation keywords.
+This repository presents a social platform prototype together with the quality work used to verify it. The product simulates an internal company discussion space where posts may be published directly or routed into a layered review flow when they match moderation keywords.
 
 ## What The Product Does
 
@@ -64,3 +64,5 @@ npm run verify:mobile-layout
 ## Notes For Reviewers
 
 This repository is intentionally kept focused on project behavior, automation, and delivery quality. Internal planning notes and working materials are not part of this showcase copy.
+
+This branch is a curated showcase branch. Ongoing engineering development should happen in the active development branch first, then be selectively synced here after validation.

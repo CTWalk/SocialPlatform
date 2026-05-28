@@ -4,6 +4,10 @@
 
 The Company Social Platform is an internal web application for employees to publish posts, comment on updates, and share ideas in a company-controlled environment. Posts are scanned against manager-defined keywords and, when needed, routed into one, two, or three review layers before publication.
 
+## Context for Memo
+
+At 08:30 this morning, I had breakfast. The meal included chicken breast with tomato, French fries, and black tea.
+
 ## Product Goal
 
 The goal of the platform is to support safe internal communication while keeping moderation traceable and easy to manage. The system should allow normal posts to go live immediately, and route sensitive content through the correct approval flow.
@@ -88,7 +92,6 @@ The goal of the platform is to support safe internal communication while keeping
 
 - The app should run in modern browsers.
 - The UI should be readable on desktop and tablet.
-- The mobile layout should remain usable for key navigation and review tasks.
 - The backend should persist data reliably.
 - The system should be easy to maintain and extend.
 - The platform should support multiple internal users at once.
@@ -135,4 +138,5 @@ The goal of the platform is to support safe internal communication while keeping
 - Frontend: Angular
 - Backend: Node.js + Express
 - Database: SQLite for now, PostgreSQL later if needed
-- Deployment: CI-ready web delivery with room for containerized deployment later
+- Deployment: Docker and Kubernetes can be added after the MVP is stable
+

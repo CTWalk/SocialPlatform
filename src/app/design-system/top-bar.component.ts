@@ -3,7 +3,7 @@ import { NgIf } from '@angular/common';
 import { MIconComponent } from './m-icon.component';
 
 @Component({
-  selector: 'mm-top-bar',
+  selector: 'sp-top-bar',
   standalone: true,
   imports: [NgIf, MIconComponent],
   template: `

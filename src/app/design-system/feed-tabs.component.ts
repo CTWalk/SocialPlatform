@@ -3,7 +3,7 @@ import { NgFor } from '@angular/common';
 import { MIconComponent } from './m-icon.component';
 
 @Component({
-  selector: 'mm-feed-tabs',
+  selector: 'sp-feed-tabs',
   standalone: true,
   imports: [NgFor, MIconComponent],
   template: `

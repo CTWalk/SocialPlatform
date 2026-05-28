@@ -7,7 +7,7 @@ import { TopBarComponent } from '../design-system';
   imports: [TopBarComponent],
   template: `
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column">
-      <mm-top-bar title="App Icon" [showBack]="true" (onBack)="back()"></mm-top-bar>
+      <sp-top-bar title="App Icon" [showBack]="true" (onBack)="back()"></sp-top-bar>
     </div>
   `,
 })

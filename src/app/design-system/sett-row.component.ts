@@ -4,7 +4,7 @@ import { MIconComponent } from './m-icon.component';
 import { ToggleComponent } from './toggle.component';
 
 @Component({
-  selector: 'mm-sett-row',
+  selector: 'sp-sett-row',
   standalone: true,
   imports: [NgIf, MIconComponent, ToggleComponent],
   template: `
@@ -23,7 +23,7 @@ import { ToggleComponent } from './toggle.component';
         style="color:#6E6E6E;margin-right:6px;font-size:17px;letter-spacing:-0.3px">
         {{ value }}
       </div>
-      <mm-toggle *ngIf="toggle !== undefined" [on]="toggle" (onChange)="onToggle.emit($event)"></mm-toggle>
+      <sp-toggle *ngIf="toggle !== undefined" [on]="toggle" (onChange)="onToggle.emit($event)"></sp-toggle>
       <svg *ngIf="chevron && toggle === undefined" width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0">
         <path d="M1 1l5 5-5 5" stroke="#A5A5A5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>

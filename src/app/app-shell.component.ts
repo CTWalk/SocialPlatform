@@ -31,8 +31,8 @@ interface NavItem {
         </div>
 
         <div class="brand">
-          <div class="brand-mark"><m-icon name="mammoth-logo" [size]="22"></m-icon></div>
-          <div class="brand-wordmark">Mammoth</div>
+          <div class="brand-mark"><m-icon name="brand-logo" [size]="22"></m-icon></div>
+          <div class="brand-wordmark">Social Platform</div>
         </div>
 
         <a routerLink="/discover" class="quick-find" aria-label="Open discover">
@@ -154,8 +154,8 @@ interface NavItem {
         <!-- Mobile top bar -->
         <header class="mobile-topbar" data-testid="mobile-topbar">
           <div class="brand compact">
-            <div class="brand-mark"><m-icon name="mammoth-logo" [size]="22"></m-icon></div>
-            <div class="brand-wordmark">Mammoth</div>
+            <div class="brand-mark"><m-icon name="brand-logo" [size]="22"></m-icon></div>
+            <div class="brand-wordmark">Social Platform</div>
           </div>
           <div class="mobile-topbar-actions">
             <a

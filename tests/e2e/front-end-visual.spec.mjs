@@ -19,7 +19,7 @@ test.describe('Company social platform visual flow', () => {
   test('captures the main user journey', async ({ page }) => {
     await page.goto(baseUrl);
 
-    await expect(page.getByRole('heading', { name: 'Mammoth' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Social Platform' })).toBeVisible();
     await saveShot(page, '01-login', 'login-screen');
 
     await page.getByLabel('Username').fill('admin.user');

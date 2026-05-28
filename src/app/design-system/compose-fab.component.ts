@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { MIconComponent } from './m-icon.component';
 
 @Component({
-  selector: 'mm-compose-fab',
+  selector: 'sp-compose-fab',
   standalone: true,
   imports: [MIconComponent],
   template: `

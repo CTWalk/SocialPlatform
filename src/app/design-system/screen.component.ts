@@ -4,7 +4,7 @@ import { TabBarComponent } from './tab-bar.component';
 import { ComposeFabComponent } from './compose-fab.component';
 
 @Component({
-  selector: 'mm-screen',
+  selector: 'sp-screen',
   standalone: true,
   imports: [NgIf, TabBarComponent, ComposeFabComponent],
   template: `
@@ -12,14 +12,14 @@ import { ComposeFabComponent } from './compose-fab.component';
       <div style="flex:1;overflow:auto;padding-bottom:100px;padding-top:54px">
         <ng-content></ng-content>
       </div>
-      <mm-compose-fab *ngIf="!hideTabBar && fab !== false"
+      <sp-compose-fab *ngIf="!hideTabBar && fab !== false"
         [icon]="fab || 'plus'"
         (onClick)="onFab.emit()">
-      </mm-compose-fab>
-      <mm-tab-bar *ngIf="!hideTabBar"
+      </sp-compose-fab>
+      <sp-tab-bar *ngIf="!hideTabBar"
         [active]="tabActive"
         (onChange)="onTabChange.emit($event)">
-      </mm-tab-bar>
+      </sp-tab-bar>
     </div>
   `,
 })

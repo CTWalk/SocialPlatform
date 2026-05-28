@@ -33,7 +33,7 @@ export class MIconComponent {
 
     const map: Record<string, string> = {
       // ── Navigation ──────────────────────────────────────────
-      'mammoth-logo': `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 64 64"><path d="M 12 44 C 12 20, 20 16, 24 22 C 27 27, 24 36, 20 38 C 16 40, 14 36, 18 32 C 22 28, 30 26, 32 32 C 34 38, 30 44, 24 44 M 32 32 C 34 26, 42 26, 46 32 C 50 38, 46 40, 42 38 C 38 36, 35 27, 38 22 C 42 16, 50 20, 50 44" stroke="${c}" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      'brand-logo': `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="18" fill="${c}"/></svg>`,
       // home — reference name (alias for house)
       'home':         `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z" ${sk}/></svg>`,
       'home-fill':    `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-7h-6v7H4a1 1 0 01-1-1v-9z" ${fi}/></svg>`,

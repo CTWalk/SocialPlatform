@@ -69,7 +69,7 @@ function formatRelativeTime(iso: string): string {
 
       <ng-container *ngIf="!isLoading && !loadError">
 
-        <mm-top-bar title="Feed" [large]="true"></mm-top-bar>
+        <sp-top-bar title="Feed" [large]="true"></sp-top-bar>
 
         <!-- Compose row -->
         <div class="compose-row" (click)="openCompose()" data-testid="compose-row">
@@ -94,7 +94,7 @@ function formatRelativeTime(iso: string): string {
 
         <!-- Feed list -->
         <div *ngFor="let post of displayPosts()" (click)="openPost(post)" style="cursor:pointer">
-          <mm-post-card [post]="post"></mm-post-card>
+          <sp-post-card [post]="post"></sp-post-card>
         </div>
 
         <div *ngIf="!displayPosts().length" class="feed-empty" data-testid="feed-empty">
@@ -105,10 +105,10 @@ function formatRelativeTime(iso: string): string {
 
       </ng-container>
 
-      <mm-compose-fab
+      <sp-compose-fab
         *ngIf="!isLoading && !loadError && session.canCreatePosts()"
         (onClick)="openCompose()">
-      </mm-compose-fab>
+      </sp-compose-fab>
 
     </div>
   `,

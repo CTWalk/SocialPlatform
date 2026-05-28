@@ -14,7 +14,7 @@ const PALETTE: Record<PillKind, { bg: string; fg: string; border?: string }> = {
 };
 
 @Component({
-  selector: 'mm-pill-btn',
+  selector: 'sp-pill-btn',
   standalone: true,
   imports: [NgIf, MIconComponent],
   template: `

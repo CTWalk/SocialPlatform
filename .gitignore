@@ -1,6 +1,8 @@
 .claude/
 .circleci/
 .dockerignore
+SHOWCASE_BRANCH_POLICY.md
+guide_for_showcase.md
 .DS_Store
 node_modules/
 dist/
@@ -34,6 +36,3 @@ android/local.properties
 tests/artifacts/
 google-cloud-sdk/
 __pycache__/
-
-# Local-only guide for future showcase work
-guide_for_showcase.md

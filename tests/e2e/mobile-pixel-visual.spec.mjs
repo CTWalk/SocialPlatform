@@ -20,7 +20,7 @@ async function saveShot(page, name) {
 
 test('captures admin journey on Pixel 5', async ({ page }) => {
   await page.goto(baseUrl);
-  await expect(page.getByRole('heading', { name: 'Mammoth' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Social Platform' })).toBeVisible();
   await page.getByLabel('Username').fill('admin.user');
   await page.getByLabel('Role').selectOption('Administrator');
   await page.getByRole('button', { name: 'Sign in' }).click();

@@ -40,13 +40,13 @@ type ReviewCardItem = {
     .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .flag-btn {
       width: 44px; height: 44px; border-radius: 10px;
-      background: var(--mm-bg-chip); display: flex; align-items: center;
+      background: var(--brand-bg-chip); display: flex; align-items: center;
       justify-content: center; cursor: pointer; border: none; flex-shrink: 0;
     }
     .mobile-back-btn {
       display: flex; align-items: center; gap: 6px; background: none;
       border: none; cursor: pointer; padding: 10px 16px 4px;
-      font-size: 15px; font-weight: 500; color: var(--mm-label); width: 100%;
+      font-size: 15px; font-weight: 500; color: var(--brand-label); width: 100%;
     }
   `],
   template: `
@@ -66,13 +66,13 @@ type ReviewCardItem = {
           Review queue
         </div>
 
-        <div style="margin-top:6px;font-size:14px;color:var(--mm-label-secondary)">
+        <div style="margin-top:6px;font-size:14px;color:var(--brand-label-secondary)">
           {{ pendingTasks.length }} pending · sorted by risk
         </div>
 
         <!-- Segmented control -->
         <div style="margin-top:12px;margin-bottom:4px">
-          <mm-seg [options]="tabs" [value]="activeTab" (onChange)="setActiveTab($any($event))"></mm-seg>
+          <sp-seg [options]="tabs" [value]="activeTab" (onChange)="setActiveTab($any($event))"></sp-seg>
         </div>
       </div>
 
@@ -86,14 +86,14 @@ type ReviewCardItem = {
 
             <div style="height:3px" [style.background]="riskColorsByLevel(item.riskLevel).fg"></div>
             <div style="padding:14px">
-              <div style="font-size:15px;font-weight:600;color:var(--mm-label);margin-bottom:4px">{{ item.author }}</div>
-              <div style="font-size:12px;color:var(--mm-label-secondary);margin-bottom:6px">
+              <div style="font-size:15px;font-weight:600;color:var(--brand-label);margin-bottom:4px">{{ item.author }}</div>
+              <div style="font-size:12px;color:var(--brand-label-secondary);margin-bottom:6px">
                 {{ formatRelativeTime(item.createdAt) }} · {{ riskLabel(item.riskLevel) }}
               </div>
-              <div style="font-size:15px;line-height:1.4;color:var(--mm-label);margin-bottom:6px">
+              <div style="font-size:15px;line-height:1.4;color:var(--brand-label);margin-bottom:6px">
                 "{{ summarizeContent(item.content, 120) }}"
               </div>
-              <div style="font-size:12px;color:var(--mm-label-secondary);margin-bottom:12px">
+              <div style="font-size:12px;color:var(--brand-label-secondary);margin-bottom:12px">
                 {{ matchedKeywordsText(item.matchedKeywords) }} · {{ confidenceByLevel(item.riskLevel) | percent:'1.0-0' }}
               </div>
 
@@ -119,8 +119,8 @@ type ReviewCardItem = {
         </ng-container>
 
         <div *ngIf="!pendingTasks.length"
-          style="text-align:center;padding:40px 16px;color:var(--mm-label-secondary)">
-          <m-icon name="check" [size]="28" color="var(--mm-reposted)"></m-icon>
+          style="text-align:center;padding:40px 16px;color:var(--brand-label-secondary)">
+          <m-icon name="check" [size]="28" color="var(--brand-reposted)"></m-icon>
           <p style="margin:8px 0 0;font-size:15px">Queue is clear</p>
         </div>
       </div>
@@ -140,37 +140,37 @@ type ReviewCardItem = {
             [style.color]="riskColorsByLevel(selected.riskLevel).fg">
             {{ selected.riskLevel }} risk
           </span>
-          <span style="font-size:12px;color:var(--mm-label-secondary)">
+          <span style="font-size:12px;color:var(--brand-label-secondary)">
             Auto-flagged · {{ formatRelativeTime(selected.createdAt) }}
           </span>
         </div>
 
-        <div style="background:#fff;border-radius:14px;padding:18px;border:0.5px solid var(--mm-sep)">
+        <div style="background:#fff;border-radius:14px;padding:18px;border:0.5px solid var(--brand-sep)">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
             <av [name]="selected.author" [size]="36"></av>
             <div style="flex:1;min-width:0">
-              <div style="font-size:14px;font-weight:600;color:var(--mm-label)">{{ selected.author }}</div>
-              <div style="font-size:12px;color:var(--mm-label-secondary)">
+              <div style="font-size:14px;font-weight:600;color:var(--brand-label)">{{ selected.author }}</div>
+              <div style="font-size:12px;color:var(--brand-label-secondary)">
                 Posted in /{{ selected.boardSlug }} · {{ formatRelativeTime(selected.createdAt) }}
               </div>
             </div>
           </div>
-          <div style="font-size:15px;line-height:1.5;padding:14px 16px;background:var(--mm-bg-chip);border-radius:8px;border:0.5px solid var(--mm-sep)">
+          <div style="font-size:15px;line-height:1.5;padding:14px 16px;background:var(--brand-bg-chip);border-radius:8px;border:0.5px solid var(--brand-sep)">
             "{{ selected.content }}"
           </div>
 
           <div *ngIf="(selected.comments || []).length" style="margin-top:16px">
-            <div style="font-size:11px;font-weight:600;color:var(--mm-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600;color:var(--brand-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
               Discussion
             </div>
             <div style="display:flex;flex-direction:column;gap:8px">
               <div *ngFor="let comment of selected.comments"
-                style="background:rgba(255,255,255,0.7);border:0.5px solid var(--mm-sep-faint);border-radius:10px;padding:10px 12px">
+                style="background:rgba(255,255,255,0.7);border:0.5px solid var(--brand-sep-faint);border-radius:10px;padding:10px 12px">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                  <span style="font-size:13px;font-weight:600;color:var(--mm-label)">{{ comment.author }}</span>
-                  <span style="font-size:12px;color:var(--mm-label-secondary)">{{ formatRelativeTime(comment.createdAt) }}</span>
+                  <span style="font-size:13px;font-weight:600;color:var(--brand-label)">{{ comment.author }}</span>
+                  <span style="font-size:12px;color:var(--brand-label-secondary)">{{ formatRelativeTime(comment.createdAt) }}</span>
                 </div>
-                <div style="font-size:14px;line-height:1.4;color:var(--mm-label)">{{ comment.comment }}</div>
+                <div style="font-size:14px;line-height:1.4;color:var(--brand-label)">{{ comment.comment }}</div>
               </div>
             </div>
           </div>

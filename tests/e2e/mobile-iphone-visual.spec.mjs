@@ -22,7 +22,7 @@ test('captures member journey on iPhone 13', async ({ page }) => {
   const uniquePost = `Mobile visual post ${Date.now()}`;
 
   await page.goto(baseUrl);
-  await expect(page.getByRole('heading', { name: 'Mammoth' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Social Platform' })).toBeVisible();
   await saveShot(page, '01-login');
 
   await page.getByLabel('Username').fill('mia.chen');

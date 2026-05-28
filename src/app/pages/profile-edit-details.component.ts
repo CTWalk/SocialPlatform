@@ -9,17 +9,17 @@ import { TopBarComponent } from '../design-system';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, TopBarComponent],
   template: `
-    <!-- EditProfileDetails — mammoth-mobile-2.jsx EditProfileDetails reference -->
+    <!-- EditProfileDetails — reference-mobile-2.jsx legacy reference -->
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column" data-testid="profile-edit-details-page">
 
-      <mm-top-bar title="Edit Details" [showBack]="true" backAriaLabel="Back to profile" (onBack)="cancel()">
+      <sp-top-bar title="Edit Details" [showBack]="true" backAriaLabel="Back to profile" (onBack)="cancel()">
         <div trailing
           (click)="save()"
           style="font-size:16px;font-weight:600;color:#1A1A1A;cursor:pointer;padding:4px 2px"
           [style.opacity]="form.invalid || saving ? 0.4 : 1">
           Done
         </div>
-      </mm-top-bar>
+      </sp-top-bar>
 
       <div style="flex:1;overflow:auto;padding:8px 0 48px">
 

@@ -7,9 +7,9 @@ import { TopBarComponent } from '../design-system';
   imports: [TopBarComponent],
   template: `
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column" data-testid="settings-about-page">
-      <mm-top-bar title="About" [showBack]="true" backAriaLabel="Back to settings" (onBack)="back()"></mm-top-bar>
+      <sp-top-bar title="About" [showBack]="true" backAriaLabel="Back to settings" (onBack)="back()"></sp-top-bar>
       <div style="padding:24px 32px;text-align:center;font-size:13px;color:#A5A5A5">
-        Mammoth · Made with ❤ for the open web
+        Social Platform · Built for connected teams
       </div>
     </div>
   `,

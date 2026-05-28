@@ -24,57 +24,57 @@ import {
     <!-- NotificationsScreen — absorbs cadence + checkbox logic from old SettingsComponent -->
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column" data-testid="settings-notifications-page">
 
-      <mm-top-bar title="Notifications" [showBack]="true" backAriaLabel="Back to settings" (onBack)="back()"></mm-top-bar>
+      <sp-top-bar title="Notifications" [showBack]="true" backAriaLabel="Back to settings" (onBack)="back()"></sp-top-bar>
 
       <div style="flex:1;overflow:auto;padding-bottom:48px">
 
         <!-- Enable toggle -->
-        <mm-sett-group>
-          <mm-sett-row
+        <sp-sett-group>
+          <sp-sett-row
             icon="bell"
             label="Enable notifications"
             [toggle]="notificationsEnabled"
             (onToggle)="onToggleNotifications($event)"
             [chevron]="false"
             [last]="true">
-          </mm-sett-row>
-        </mm-sett-group>
+          </sp-sett-row>
+        </sp-sett-group>
 
         <!-- Delivery group — only shown when enabled -->
         <ng-container *ngIf="notificationsEnabled">
-          <mm-sett-group-header></mm-sett-group-header>
-          <mm-sett-group>
+          <sp-sett-group-header></sp-sett-group-header>
+          <sp-sett-group>
             <!-- TODO(backend): wire digestCadence to preferences endpoint when available -->
             <!-- UI is rendered with local state only until then -->
-            <mm-sett-row
+            <sp-sett-row
               icon="mail"
               label="Digest cadence"
               [value]="digestCadence"
               (onClick)="cycleDigest()">
-            </mm-sett-row>
-            <mm-sett-row
+            </sp-sett-row>
+            <sp-sett-row
               icon="at"
               label="Mentions"
               [toggle]="notifyMentions"
               (onToggle)="notifyMentions = $event"
               [chevron]="false">
-            </mm-sett-row>
-            <mm-sett-row
+            </sp-sett-row>
+            <sp-sett-row
               icon="bell"
               label="Board activity"
               [toggle]="notifyBoards"
               (onToggle)="notifyBoards = $event"
               [chevron]="false">
-            </mm-sett-row>
-            <mm-sett-row
+            </sp-sett-row>
+            <sp-sett-row
               icon="shield"
               label="Moderation events"
               [toggle]="notifyModeration"
               (onToggle)="notifyModeration = $event"
               [chevron]="false"
               [last]="true">
-            </mm-sett-row>
-          </mm-sett-group>
+            </sp-sett-row>
+          </sp-sett-group>
         </ng-container>
 
       </div>

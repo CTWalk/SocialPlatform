@@ -78,9 +78,9 @@ function formatRelativeTime(iso: string): string {
           <div class="handle">&#64;{{ session.activeUser() }}</div>
           <div class="role-chip">{{ roleLabel() }}</div>
           <div style="margin-top:12px">
-            <mm-pill-btn kind="default" (onClick)="showEditMenu = !showEditMenu">
+            <sp-pill-btn kind="default" (onClick)="showEditMenu = !showEditMenu">
               Edit Profile&nbsp;<m-icon name="chev-d" [size]="14" color="#1A1A1A"></m-icon>
-            </mm-pill-btn>
+            </sp-pill-btn>
           </div>
           <div *ngIf="userProfile.bio" class="bio">{{ userProfile.bio }}</div>
           <div class="meta">{{ joinedLabel() }}</div>
@@ -89,16 +89,16 @@ function formatRelativeTime(iso: string): string {
 
       <!-- Seg: Posts / Posts & Replies -->
       <div style="padding:14px 16px 6px">
-        <mm-seg
+        <sp-seg
           [options]="['Posts', 'Posts & Replies']"
           [value]="activeTab"
           (onChange)="activeTab = $event">
-        </mm-seg>
+        </sp-seg>
       </div>
 
       <!-- Posts list -->
       <div *ngIf="activeTab === 'Posts'" data-testid="profile-posts-card">
-        <mm-post-card *ngFor="let post of mappedPosts()" [post]="post"></mm-post-card>
+        <sp-post-card *ngFor="let post of mappedPosts()" [post]="post"></sp-post-card>
         <div *ngIf="!myPosts().length"
           style="margin:0 16px;padding:48px 24px;text-align:center;color:#6E6E6E;background:rgba(0,0,0,0.03);border-radius:16px">
           <p style="font-size:16px;font-family:var(--serif);color:#1A1A1A;margin:0 0 6px">Nothing posted yet</p>

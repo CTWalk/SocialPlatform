@@ -13,7 +13,7 @@ import { MIconComponent } from '../design-system';
           <span class="eyebrow">Mentions</span>
           <h2>Mentions are being prepared</h2>
           <p>
-            This placeholder keeps the Mammoth shell route live for PR 2 while the dedicated
+            This placeholder keeps the current shell route live while the dedicated
             mentions experience is wired in a later step.
           </p>
         </div>

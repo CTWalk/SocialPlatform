@@ -25,7 +25,7 @@ import {
     SettGroupHeaderComponent,
   ],
   template: `
-    <!-- Mammoth SettingsScreen hub — mammoth-mobile-3.jsx reference -->
+    <!-- Reference SettingsScreen hub — reference-mobile-3.jsx reference -->
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column" data-testid="settings-page">
 
       <!-- Custom top bar: close → /profile | "Settings" centred | spacer -->
@@ -44,36 +44,36 @@ import {
 
         <!-- ── C1: Role-gated Moderation group (ABOVE gold banner per spec) ── -->
         <ng-container *ngIf="session.canReviewPosts() || session.canModerateKeywords() || session.canManageUsers()">
-          <mm-sett-group-header>Moderation</mm-sett-group-header>
-          <mm-sett-group>
-            <mm-sett-row
+          <sp-sett-group-header>Moderation</sp-sett-group-header>
+          <sp-sett-group>
+            <sp-sett-row
               *ngIf="session.canReviewPosts()"
               icon="shield"
               label="Review queue"
               [badge]="''"
               (onClick)="navTo('/moderation/review')">
-            </mm-sett-row>
-            <mm-sett-row
+            </sp-sett-row>
+            <sp-sett-row
               *ngIf="session.canModerateKeywords()"
               icon="filter"
               label="Moderation rules"
               (onClick)="navTo('/moderation/rules')">
-            </mm-sett-row>
-            <mm-sett-row
+            </sp-sett-row>
+            <sp-sett-row
               *ngIf="session.canManageUsers()"
               icon="people"
               label="User administration"
               [last]="true"
               (onClick)="navTo('/admin/users')">
-            </mm-sett-row>
-          </mm-sett-group>
+            </sp-sett-row>
+          </sp-sett-group>
         </ng-container>
 
         <!-- ── Gold banner — dismissable ── -->
         <div *ngIf="showGoldBanner"
           style="margin:4px 16px 14px;background:rgba(201,169,97,0.18);border-radius:14px;padding:16px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <div style="font-size:15px;font-weight:600;color:#B08D3F">Welcome to Mammoth!</div>
+            <div style="font-size:15px;font-weight:600;color:#B08D3F">Premium access is ready</div>
             <div (click)="showGoldBanner = false"
               style="margin-left:auto;color:#B08D3F;cursor:pointer"
               data-testid="settings-banner-dismiss">
@@ -83,55 +83,55 @@ import {
           <div style="font-size:13px;color:#B08D3F;margin-bottom:12px;line-height:1.4">
             Set up your profile and explore company channels to get started.
           </div>
-          <mm-pill-btn kind="gold" (onClick)="navTo('/boards')">Explore boards</mm-pill-btn>
+          <sp-pill-btn kind="gold" (onClick)="navTo('/boards')">Explore boards</sp-pill-btn>
         </div>
 
         <!-- ── Account group ── -->
-        <mm-sett-group>
-          <mm-sett-row icon="person" label="Accounts" (onClick)="navTo('/settings/accounts')"></mm-sett-row>
-          <mm-sett-row icon="logout" label="Sign out" [danger]="true" [last]="true" (onClick)="signOut()" data-testid="settings-sign-out"></mm-sett-row>
-        </mm-sett-group>
+        <sp-sett-group>
+          <sp-sett-row icon="person" label="Accounts" (onClick)="navTo('/settings/accounts')"></sp-sett-row>
+          <sp-sett-row icon="logout" label="Sign out" [danger]="true" [last]="true" (onClick)="signOut()" data-testid="settings-sign-out"></sp-sett-row>
+        </sp-sett-group>
 
         <!-- ── Personalization group ── -->
-        <mm-sett-group-header></mm-sett-group-header>
-        <mm-sett-group>
-          <mm-sett-row icon="paint"     label="Appearance"         (onClick)="navTo('/settings/appearance')"></mm-sett-row>
-          <mm-sett-row icon="bell"      label="Notifications"      (onClick)="navTo('/settings/notifications')"></mm-sett-row>
-          <mm-sett-row icon="sound"     label="Sounds and Haptics" (onClick)="navTo('/settings/sounds')" [last]="true"></mm-sett-row>
-        </mm-sett-group>
+        <sp-sett-group-header></sp-sett-group-header>
+        <sp-sett-group>
+          <sp-sett-row icon="paint"     label="Appearance"         (onClick)="navTo('/settings/appearance')"></sp-sett-row>
+          <sp-sett-row icon="bell"      label="Notifications"      (onClick)="navTo('/settings/notifications')"></sp-sett-row>
+          <sp-sett-row icon="sound"     label="Sounds and Haptics" (onClick)="navTo('/settings/sounds')" [last]="true"></sp-sett-row>
+        </sp-sett-group>
 
         <!-- ── Support group ── -->
-        <mm-sett-group-header></mm-sett-group-header>
-        <mm-sett-group>
-          <mm-sett-row icon="mail"  label="Get in touch"           (onClick)="navTo('/settings/contact')"></mm-sett-row>
-          <mm-sett-row icon="info"  label="About"        [last]="true" (onClick)="navTo('/settings/about')"></mm-sett-row>
-        </mm-sett-group>
+        <sp-sett-group-header></sp-sett-group-header>
+        <sp-sett-group>
+          <sp-sett-row icon="mail"  label="Get in touch"           (onClick)="navTo('/settings/contact')"></sp-sett-row>
+          <sp-sett-row icon="info"  label="About"        [last]="true" (onClick)="navTo('/settings/about')"></sp-sett-row>
+        </sp-sett-group>
 
         <!-- ── Security group ── -->
-        <mm-sett-group-header></mm-sett-group-header>
-        <mm-sett-group>
+        <sp-sett-group-header></sp-sett-group-header>
+        <sp-sett-group>
           <!-- TODO(backend): wire to app-lock preferences endpoint when available -->
           <!-- UI is rendered with local state only until then -->
-          <mm-sett-row
+          <sp-sett-row
             icon="lock"
             label="App lock"
             [toggle]="appLockEnabled"
             (onToggle)="appLockEnabled = $event"
             [chevron]="false"
             [last]="true">
-          </mm-sett-row>
-        </mm-sett-group>
+          </sp-sett-row>
+        </sp-sett-group>
 
         <!-- ── Privacy group ── -->
-        <mm-sett-group-header></mm-sett-group-header>
-        <mm-sett-group>
-          <mm-sett-row icon="shield" label="Privacy policy"       (onClick)="openPrivacyPolicy()"></mm-sett-row>
-          <mm-sett-row icon="trash"  label="Clear cache and data" [danger]="true" [last]="true" (onClick)="clearCache()"></mm-sett-row>
-        </mm-sett-group>
+        <sp-sett-group-header></sp-sett-group-header>
+        <sp-sett-group>
+          <sp-sett-row icon="shield" label="Privacy policy"       (onClick)="openPrivacyPolicy()"></sp-sett-row>
+          <sp-sett-row icon="trash"  label="Clear cache and data" [danger]="true" [last]="true" (onClick)="clearCache()"></sp-sett-row>
+        </sp-sett-group>
 
         <!-- Footer -->
         <div style="padding:24px 32px 60px;text-align:center;font-size:12px;color:#A5A5A5">
-          Mammoth · Made with ❤ for the open web
+          Social Platform · Built for connected teams
         </div>
 
       </div>

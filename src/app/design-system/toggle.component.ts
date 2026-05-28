@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: 'mm-toggle',
+  selector: 'sp-toggle',
   standalone: true,
   template: `
     <div (click)="onChange.emit(!on)" [style]="trackStyle()">

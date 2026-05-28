@@ -21,7 +21,7 @@ function hashIdx(s: string, n: number): number {
   standalone: true,
   imports: [NgIf],
   template: `
-    <div *ngIf="mammoth; else initials" [style]="mammothStyle()">
+    <div *ngIf="brand; else initials" [style]="brandStyle()">
       <svg [attr.width]="size * 0.7" [attr.height]="size * 0.7" viewBox="0 0 64 64" style="display:block">
         <path
           d="M 12 44 C 12 20, 20 16, 24 22 C 27 27, 24 36, 20 38 C 16 40, 14 36, 18 32 C 22 28, 30 26, 32 32 C 34 38, 30 44, 24 44 M 32 32 C 34 26, 42 26, 46 32 C 50 38, 46 40, 42 38 C 38 36, 35 27, 38 22 C 42 16, 50 20, 50 44"
@@ -37,7 +37,7 @@ export class AvComponent {
   @Input() name = '';
   @Input() size = 40;
   @Input() ring = false;
-  @Input() mammoth = false;
+  @Input() brand = false;
 
   initials(): string {
     return this.name
@@ -67,7 +67,7 @@ export class AvComponent {
     };
   }
 
-  mammothStyle(): Record<string, string> {
+  brandStyle(): Record<string, string> {
     return {
       width: `${this.size}px`,
       height: `${this.size}px`,

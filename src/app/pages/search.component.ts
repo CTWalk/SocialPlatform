@@ -9,20 +9,20 @@ import { MIconComponent, PillBtnComponent, StateBlockComponent } from '../design
   standalone: true,
   imports: [CommonModule, MIconComponent, PillBtnComponent, StateBlockComponent],
   styles: [`
-    .discover-page { min-height: 100%; background: var(--mm-bg, #F3F1ED); }
-    .discover-empty-hero { padding: 64px 24px 40px; text-align: center; border-bottom: 0.5px solid var(--mm-sep, rgba(0,0,0,0.08)); }
-    .discover-empty-title { font-family: var(--serif); font-size: 20px; font-weight: 400; color: var(--mm-label, #1A1A1A); margin: 12px 0 4px; }
-    .discover-empty-body { font-size: 14px; color: var(--mm-label-secondary, #6E6E6E); margin: 0; }
+    .discover-page { min-height: 100%; background: var(--brand-bg, #F3F1ED); }
+    .discover-empty-hero { padding: 64px 24px 40px; text-align: center; border-bottom: 0.5px solid var(--brand-sep, rgba(0,0,0,0.08)); }
+    .discover-empty-title { font-family: var(--serif); font-size: 20px; font-weight: 400; color: var(--brand-label, #1A1A1A); margin: 12px 0 4px; }
+    .discover-empty-body { font-size: 14px; color: var(--brand-label-secondary, #6E6E6E); margin: 0; }
     .discover-section { padding: 20px 16px; }
-    .discover-section-header { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mm-label-secondary, #6E6E6E); margin-bottom: 12px; }
-    .discover-board-row { display: flex; align-items: center; gap: 12px; padding: 12px 8px; border-radius: 12px; text-decoration: none; color: var(--mm-label, #1A1A1A); cursor: pointer; }
-    .discover-board-row:hover { background: var(--mm-bg-chip, #E6E4DE); }
-    .discover-board-hash { font-size: 18px; font-weight: 300; color: var(--mm-label-secondary, #6E6E6E); width: 24px; text-align: center; flex-shrink: 0; }
+    .discover-section-header { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand-label-secondary, #6E6E6E); margin-bottom: 12px; }
+    .discover-board-row { display: flex; align-items: center; gap: 12px; padding: 12px 8px; border-radius: 12px; text-decoration: none; color: var(--brand-label, #1A1A1A); cursor: pointer; }
+    .discover-board-row:hover { background: var(--brand-bg-chip, #E6E4DE); }
+    .discover-board-hash { font-size: 18px; font-weight: 300; color: var(--brand-label-secondary, #6E6E6E); width: 24px; text-align: center; flex-shrink: 0; }
     .discover-board-info { flex: 1; min-width: 0; }
     .discover-board-name { font-size: 15px; font-weight: 500; display: block; }
-    .discover-board-sub { font-size: 13px; color: var(--mm-label-secondary, #6E6E6E); display: block; margin-top: 1px; }
+    .discover-board-sub { font-size: 13px; color: var(--brand-label-secondary, #6E6E6E); display: block; margin-top: 1px; }
 
-    .discover-boards-empty { font-size: 14px; color: var(--mm-label-tertiary, #A5A5A5); padding: 8px; }
+    .discover-boards-empty { font-size: 14px; color: var(--brand-label-tertiary, #A5A5A5); padding: 8px; }
   `],
   template: `
     <div class="discover-page" data-testid="search-page">
@@ -45,7 +45,7 @@ import { MIconComponent, PillBtnComponent, StateBlockComponent } from '../design
 
         <!-- Search empty state (E9: no search endpoint) -->
         <div class="discover-empty-hero">
-          <m-icon name="search" [size]="44" color="var(--mm-label-tertiary, #A5A5A5)"></m-icon>
+          <m-icon name="search" [size]="44" color="var(--brand-label-tertiary, #A5A5A5)"></m-icon>
           <p class="discover-empty-title">Discover coming soon</p>
           <p class="discover-empty-body">Search, trending topics, and people will appear here when available.</p>
         </div>
@@ -65,10 +65,10 @@ import { MIconComponent, PillBtnComponent, StateBlockComponent } from '../design
               <span *ngIf="board.desc" class="discover-board-sub">{{ board.desc }}</span>
             </div>
             <span *ngIf="board.subscribed" (click)="leaveBoardFromDiscover($event, board.slug)">
-              <mm-pill-btn kind="ghost">Leave</mm-pill-btn>
+              <sp-pill-btn kind="ghost">Leave</sp-pill-btn>
             </span>
             <span *ngIf="!board.subscribed" (click)="joinBoardFromDiscover($event, board.slug)">
-              <mm-pill-btn kind="default">Join</mm-pill-btn>
+              <sp-pill-btn kind="default">Join</sp-pill-btn>
             </span>
           </div>
 

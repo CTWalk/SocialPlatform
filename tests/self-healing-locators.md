@@ -64,7 +64,7 @@ When healing happens, we record:
 - test file
 - test title
 
-Artifacts are generated under:
+Artifacts are written under:
 
 - `tests/artifacts/self-healing/healing-report.ndjson`
 - `tests/artifacts/self-healing/healing-summary.md`

@@ -1,8 +1,8 @@
-export { MM } from './mammoth-tokens';
+export { BRAND_TOKENS } from './brand-tokens';
 export { MIconComponent } from './m-icon.component';
 export { AvComponent } from './av.component';
 export { StateBlockComponent } from './state-block.component';
-export { MammothLogoComponent } from './mammoth-logo.component';
+export { BrandLogoComponent } from './brand-logo.component';
 export { ToggleComponent } from './toggle.component';
 export { SegComponent } from './seg.component';
 export { PillBtnComponent } from './pill-btn.component';

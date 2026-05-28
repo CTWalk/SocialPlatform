@@ -32,10 +32,10 @@ type ReviewCardItem = {
     :host { display: block; background: #F3F1ED; min-height: 100%; }
     .toolbar {
       display: flex; align-items: center; gap: 12px;
-      padding: 16px 22px; border-bottom: 0.5px solid var(--mm-sep); background: #fff;
+      padding: 16px 22px; border-bottom: 0.5px solid var(--brand-sep); background: #fff;
     }
     .toolbar-title { font-family: var(--serif); font-size: 22px; font-weight: 400; flex: 1; letter-spacing: -0.3px; color: #1A1A1A; }
-    .toolbar-subtitle { font-size: 13px; color: var(--mm-label-secondary); margin-top: 1px; }
+    .toolbar-subtitle { font-size: 13px; color: var(--brand-label-secondary); margin-top: 1px; }
     .filter-btn {
       width: 36px; height: 36px; border-radius: 50%;
       background: rgba(0,0,0,0.06); display: flex;
@@ -43,7 +43,7 @@ type ReviewCardItem = {
     }
     .desktop-body { display: flex; align-items: flex-start; min-height: calc(100vh - 73px); }
     .left-pane {
-      width: 380px; flex-shrink: 0; border-right: 0.5px solid var(--mm-sep);
+      width: 380px; flex-shrink: 0; border-right: 0.5px solid var(--brand-sep);
       background: rgba(255,255,255,0.4); align-self: stretch;
     }
     .right-pane { flex: 1; padding: 22px; }
@@ -56,7 +56,7 @@ type ReviewCardItem = {
     .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .flag-btn {
       width: 44px; height: 44px; border-radius: 10px;
-      background: var(--mm-bg-chip); display: flex; align-items: center;
+      background: var(--brand-bg-chip); display: flex; align-items: center;
       justify-content: center; cursor: pointer; border: none; flex-shrink: 0;
     }
   `],
@@ -72,7 +72,7 @@ type ReviewCardItem = {
         <div class="filter-btn" aria-label="Filter">
           <m-icon name="filter" [size]="18"></m-icon>
         </div>
-        <mm-pill-btn kind="gold" (onClick)="approveAllSafe()">Approve all safe</mm-pill-btn>
+        <sp-pill-btn kind="gold" (onClick)="approveAllSafe()">Approve all safe</sp-pill-btn>
       </div>
 
       <div class="desktop-body">
@@ -81,7 +81,7 @@ type ReviewCardItem = {
         <div class="left-pane">
           <!-- Seg control -->
           <div style="padding:10px 12px">
-            <mm-seg [options]="tabs" [value]="activeTab" (onChange)="setActiveTab($any($event))"></mm-seg>
+            <sp-seg [options]="tabs" [value]="activeTab" (onChange)="setActiveTab($any($event))"></sp-seg>
           </div>
 
           <div style="padding:0 12px 24px;display:flex;flex-direction:column;gap:10px">
@@ -90,18 +90,18 @@ type ReviewCardItem = {
                 class="rq-card"
                 [attr.data-testid]="'review-task-' + item.id"
                 (click)="openTask(item.postId)"
-                [style.outline]="selectedPost?.id === item.postId ? '2px solid var(--mm-gold)' : 'none'"
+                [style.outline]="selectedPost?.id === item.postId ? '2px solid var(--brand-gold)' : 'none'"
                 [style.outline-offset]="'-2px'">
                 <div style="height:3px" [style.background]="riskColorsByLevel(item.riskLevel).fg"></div>
                 <div style="padding:12px">
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
-                    <div style="font-size:14px;font-weight:600;color:var(--mm-label);min-width:0;flex:1">{{ item.author }}</div>
-                    <span style="font-size:11px;color:var(--mm-label-secondary);white-space:nowrap">{{ formatRelativeTime(item.createdAt) }}</span>
+                    <div style="font-size:14px;font-weight:600;color:var(--brand-label);min-width:0;flex:1">{{ item.author }}</div>
+                    <span style="font-size:11px;color:var(--brand-label-secondary);white-space:nowrap">{{ formatRelativeTime(item.createdAt) }}</span>
                   </div>
-                  <div style="font-size:11px;color:var(--mm-label-secondary);margin-bottom:6px">
+                  <div style="font-size:11px;color:var(--brand-label-secondary);margin-bottom:6px">
                     {{ riskLabel(item.riskLevel) }}
                   </div>
-                  <div style="font-size:13px;line-height:1.4;color:var(--mm-label);letter-spacing:-0.1px">
+                  <div style="font-size:13px;line-height:1.4;color:var(--brand-label);letter-spacing:-0.1px">
                     "{{ summarizeContent(item.content, 100) }}"
                   </div>
                 </div>
@@ -109,8 +109,8 @@ type ReviewCardItem = {
             </ng-container>
 
             <div *ngIf="!pendingTasks.length"
-              style="text-align:center;padding:32px 16px;color:var(--mm-label-secondary)">
-              <m-icon name="check" [size]="24" color="var(--mm-reposted)"></m-icon>
+              style="text-align:center;padding:32px 16px;color:var(--brand-label-secondary)">
+              <m-icon name="check" [size]="24" color="var(--brand-reposted)"></m-icon>
               <p style="margin:8px 0 0;font-size:14px">Queue is clear</p>
             </div>
           </div>
@@ -124,35 +124,35 @@ type ReviewCardItem = {
               [style.color]="riskColorsByLevel(selected.riskLevel).fg">
               {{ selected.riskLevel }} risk
             </span>
-            <span style="font-size:12px;color:var(--mm-label-secondary)">
+            <span style="font-size:12px;color:var(--brand-label-secondary)">
               Auto-flagged · {{ formatRelativeTime(selected.createdAt) }}
             </span>
           </div>
 
-          <div style="background:#fff;border-radius:14px;padding:18px;border:0.5px solid var(--mm-sep)">
+          <div style="background:#fff;border-radius:14px;padding:18px;border:0.5px solid var(--brand-sep)">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
               <av [name]="selected.author" [size]="36"></av>
               <div style="flex:1;min-width:0">
-                <div style="font-size:14px;font-weight:600;color:var(--mm-label)">{{ selected.author }}</div>
-                <div style="font-size:12px;color:var(--mm-label-secondary)">
+                <div style="font-size:14px;font-weight:600;color:var(--brand-label)">{{ selected.author }}</div>
+                <div style="font-size:12px;color:var(--brand-label-secondary)">
                   Posted in /{{ selected.boardSlug }} · {{ formatRelativeTime(selected.createdAt) }}
                 </div>
               </div>
             </div>
-            <div style="font-size:15px;line-height:1.5;padding:14px 16px;background:var(--mm-bg-chip);border-radius:8px;border:0.5px solid var(--mm-sep)">
+            <div style="font-size:15px;line-height:1.5;padding:14px 16px;background:var(--brand-bg-chip);border-radius:8px;border:0.5px solid var(--brand-sep)">
               "{{ selected.content }}"
             </div>
 
             <!-- Signals panel -->
             <div style="margin-top:16px">
-              <div style="font-size:11px;font-weight:600;color:var(--mm-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
+              <div style="font-size:11px;font-weight:600;color:var(--brand-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
                 Signals
               </div>
               <!-- TODO(backend): wire signal confidence scores from /api/audit/queue when breakdown is available -->
               <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
-                <div style="background:var(--mm-bg-chip);border-radius:8px;padding:10px;border:0.5px solid var(--mm-sep-faint)">
+                <div style="background:var(--brand-bg-chip);border-radius:8px;padding:10px;border:0.5px solid var(--brand-sep-faint)">
                   <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px">
-                    <span style="color:var(--mm-label-secondary)">Risk score</span>
+                    <span style="color:var(--brand-label-secondary)">Risk score</span>
                     <span style="font-weight:600" [style.color]="riskColorsByLevel(selected.riskLevel).fg">
                       {{ confidenceByLevel(selected.riskLevel) | percent:'1.0-0' }}
                     </span>
@@ -164,12 +164,12 @@ type ReviewCardItem = {
                   </div>
                 </div>
                 <div *ngIf="(selected.matchedKeywords || []).length > 0"
-                  style="background:var(--mm-bg-chip);border-radius:8px;padding:10px;border:0.5px solid var(--mm-sep-faint)">
+                  style="background:var(--brand-bg-chip);border-radius:8px;padding:10px;border:0.5px solid var(--brand-sep-faint)">
                   <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
-                    <span style="color:var(--mm-label-secondary)">Keyword hits</span>
+                    <span style="color:var(--brand-label-secondary)">Keyword hits</span>
                     <span style="font-weight:600;color:#D88030">{{ (selected.matchedKeywords || []).length }}</span>
                   </div>
-                  <div style="font-size:11px;color:var(--mm-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  <div style="font-size:11px;color:var(--brand-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                     {{ (selected.matchedKeywords || []).join(', ') }}
                   </div>
                 </div>
@@ -177,17 +177,17 @@ type ReviewCardItem = {
             </div>
 
             <div *ngIf="(selected.comments || []).length" style="margin-top:16px">
-              <div style="font-size:11px;font-weight:600;color:var(--mm-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
+              <div style="font-size:11px;font-weight:600;color:var(--brand-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
                 Discussion
               </div>
               <div style="display:flex;flex-direction:column;gap:8px">
                 <div *ngFor="let comment of selected.comments"
-                  style="background:rgba(255,255,255,0.7);border:0.5px solid var(--mm-sep-faint);border-radius:10px;padding:10px 12px">
+                  style="background:rgba(255,255,255,0.7);border:0.5px solid var(--brand-sep-faint);border-radius:10px;padding:10px 12px">
                   <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                    <span style="font-size:13px;font-weight:600;color:var(--mm-label)">{{ comment.author }}</span>
-                    <span style="font-size:12px;color:var(--mm-label-secondary)">{{ formatRelativeTime(comment.createdAt) }}</span>
+                    <span style="font-size:13px;font-weight:600;color:var(--brand-label)">{{ comment.author }}</span>
+                    <span style="font-size:12px;color:var(--brand-label-secondary)">{{ formatRelativeTime(comment.createdAt) }}</span>
                   </div>
-                  <div style="font-size:14px;line-height:1.4;color:var(--mm-label)">{{ comment.comment }}</div>
+                  <div style="font-size:14px;line-height:1.4;color:var(--brand-label)">{{ comment.comment }}</div>
                 </div>
               </div>
             </div>
@@ -211,19 +211,19 @@ type ReviewCardItem = {
 
           <!-- Review history -->
           <div *ngIf="(selected.tasks || []).length" style="margin-top:16px">
-            <div style="font-size:11px;font-weight:600;color:var(--mm-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600;color:var(--brand-label-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px">
               Review history
             </div>
-            <div style="background:#fff;border-radius:12px;overflow:hidden;border:0.5px solid var(--mm-sep)">
+            <div style="background:#fff;border-radius:12px;overflow:hidden;border:0.5px solid var(--brand-sep)">
               <div *ngFor="let h of selected.tasks; let last = last"
                 style="padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px"
-                [style.border-bottom]="last ? 'none' : '0.5px solid var(--mm-sep-faint)'">
-                <span style="color:var(--mm-label-secondary)">L{{ h.level }} · {{ h.reviewerRole }}</span>
+                [style.border-bottom]="last ? 'none' : '0.5px solid var(--brand-sep-faint)'">
+                <span style="color:var(--brand-label-secondary)">L{{ h.level }} · {{ h.reviewerRole }}</span>
                 <span style="margin-left:auto;font-weight:600"
-                  [style.color]="h.status === 'Approved' ? '#4F8F5F' : h.status === 'Rejected' ? '#C44545' : 'var(--mm-gold)'">
+                  [style.color]="h.status === 'Approved' ? '#4F8F5F' : h.status === 'Rejected' ? '#C44545' : 'var(--brand-gold)'">
                   {{ h.status }}
                 </span>
-                <span *ngIf="h.reviewer" style="color:var(--mm-label-tertiary);font-size:12px">· {{ h.reviewer }}</span>
+                <span *ngIf="h.reviewer" style="color:var(--brand-label-tertiary);font-size:12px">· {{ h.reviewer }}</span>
               </div>
             </div>
           </div>
@@ -231,9 +231,9 @@ type ReviewCardItem = {
 
         <!-- Empty right pane (no selection) — only shows when queue is empty -->
         <div *ngIf="!selectedPost && !pendingTasks.length" class="right-pane"
-          style="display:flex;align-items:center;justify-content:center;color:var(--mm-label-tertiary);min-height:300px">
+          style="display:flex;align-items:center;justify-content:center;color:var(--brand-label-tertiary);min-height:300px">
           <div style="text-align:center">
-            <m-icon name="flag" [size]="32" color="var(--mm-label-tertiary)"></m-icon>
+            <m-icon name="flag" [size]="32" color="var(--brand-label-tertiary)"></m-icon>
             <p style="margin:12px 0 0;font-size:15px">Queue is clear</p>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { NgIf } from '@angular/common';
 
 @Component({
-  selector: 'mm-sett-group',
+  selector: 'sp-sett-group',
   standalone: true,
   template: `
     <div style="margin:0 16px;border-radius:14px;overflow:hidden;background:#fff">
@@ -13,7 +13,7 @@ import { NgIf } from '@angular/common';
 export class SettGroupComponent {}
 
 @Component({
-  selector: 'mm-sett-group-header',
+  selector: 'sp-sett-group-header',
   standalone: true,
   imports: [NgIf],
   template: `

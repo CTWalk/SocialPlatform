@@ -67,24 +67,24 @@ function formatRelativeTime(iso: string): string {
             </div>
           </div>
           <div>
-            <mm-pill-btn kind="default" (onClick)="showEditMenu = !showEditMenu">
+            <sp-pill-btn kind="default" (onClick)="showEditMenu = !showEditMenu">
               Edit Profile
-            </mm-pill-btn>
+            </sp-pill-btn>
           </div>
         </div>
 
         <!-- Segmented control -->
         <div class="seg-row" style="width:360px;margin:18px auto 6px">
-          <mm-seg
+          <sp-seg
             [options]="['Posts', 'Posts & Replies']"
             [value]="activeTab"
             (onChange)="activeTab = $event">
-          </mm-seg>
+          </sp-seg>
         </div>
 
         <!-- Posts list -->
         <div *ngIf="activeTab === 'Posts'" data-testid="profile-posts-card">
-          <mm-post-card *ngFor="let post of mappedPosts()" [post]="post"></mm-post-card>
+          <sp-post-card *ngFor="let post of mappedPosts()" [post]="post"></sp-post-card>
           <div *ngIf="!myPosts().length"
             style="padding:48px 24px;text-align:center;color:#6E6E6E;background:rgba(0,0,0,0.03);border-radius:16px">
             <p style="font-size:16px;font-family:var(--serif);color:#1A1A1A;margin:0 0 6px">Nothing posted yet</p>

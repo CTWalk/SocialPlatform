@@ -15,9 +15,9 @@ import {
   template: `
     <!-- AccountsScreen stub — single account view with sign-out -->
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column" data-testid="settings-accounts-page">
-      <mm-top-bar title="Accounts" [showBack]="true" backAriaLabel="Back to settings" (onBack)="back()"></mm-top-bar>
+      <sp-top-bar title="Accounts" [showBack]="true" backAriaLabel="Back to settings" (onBack)="back()"></sp-top-bar>
       <div style="padding:16px 0">
-        <mm-sett-group>
+        <sp-sett-group>
           <div style="display:flex;align-items:center;padding:14px 16px;background:#fff;gap:12px">
             <av [name]="session.activeUser()" [size]="44"></av>
             <div style="flex:1;min-width:0">
@@ -25,8 +25,8 @@ import {
               <div style="font-size:13px;color:#6E6E6E">{{ session.activeRole() }}</div>
             </div>
           </div>
-          <mm-sett-row icon="logout" label="Sign out" [danger]="true" [last]="true" (onClick)="signOut()"></mm-sett-row>
-        </mm-sett-group>
+          <sp-sett-row icon="logout" label="Sign out" [danger]="true" [last]="true" (onClick)="signOut()"></sp-sett-row>
+        </sp-sett-group>
       </div>
     </div>
   `,

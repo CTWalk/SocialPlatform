@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { NgFor } from '@angular/common';
 
 @Component({
-  selector: 'mm-seg',
+  selector: 'sp-seg',
   standalone: true,
   imports: [NgFor],
   template: `

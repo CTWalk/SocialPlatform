@@ -11,7 +11,7 @@ export const TAB_DEFS = [
 ];
 
 @Component({
-  selector: 'mm-tab-bar',
+  selector: 'sp-tab-bar',
   standalone: true,
   imports: [NgFor, NgIf, MIconComponent],
   template: `

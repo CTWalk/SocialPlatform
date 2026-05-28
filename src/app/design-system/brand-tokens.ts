@@ -1,4 +1,4 @@
-export const MM = {
+export const BRAND_TOKENS = {
   // Backgrounds
   bg: '#F3F1ED',
   bgCard: 'rgba(0,0,0,0.04)',

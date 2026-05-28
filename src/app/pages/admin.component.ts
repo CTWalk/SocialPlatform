@@ -9,29 +9,29 @@ import { AvComponent, MIconComponent, StateBlockComponent, TopBarComponent, Sett
   imports: [CommonModule, AvComponent, MIconComponent, StateBlockComponent, TopBarComponent, SettGroupComponent, SettGroupHeaderComponent],
   styles: [`
     .au-stat { background: #fff; border-radius: 14px; padding: 14px; }
-    .au-stat-val { font-family: var(--serif); font-size: 30px; font-weight: 400; letter-spacing: -0.5px; color: var(--mm-label); line-height: 1; margin-bottom: 4px; }
-    .au-stat-lbl { font-size: 13px; color: var(--mm-label-secondary); }
+    .au-stat-val { font-family: var(--serif); font-size: 30px; font-weight: 400; letter-spacing: -0.5px; color: var(--brand-label); line-height: 1; margin-bottom: 4px; }
+    .au-stat-lbl { font-size: 13px; color: var(--brand-label-secondary); }
     .au-user-row { padding: 11px 16px; display: flex; align-items: center; gap: 12px; position: relative; background: #fff; }
-    .au-divider { position: absolute; bottom: 0; left: 64px; right: 0; height: 0.5px; background: var(--mm-sep); }
+    .au-divider { position: absolute; bottom: 0; left: 64px; right: 0; height: 0.5px; background: var(--brand-sep); }
     .au-add-row { padding: 12px 16px; display: flex; align-items: center; gap: 10px; background: #fff; }
     .au-add-row input, .au-add-row select {
-      flex: 1; min-width: 0; border: none; background: var(--mm-bg-chip);
-      border-radius: 8px; padding: 8px 10px; font-size: 14px; color: var(--mm-label); outline: none;
+      flex: 1; min-width: 0; border: none; background: var(--brand-bg-chip);
+      border-radius: 8px; padding: 8px 10px; font-size: 14px; color: var(--brand-label); outline: none;
     }
     .au-add-row button {
       padding: 11px 22px; border-radius: 22px; border: none; cursor: pointer;
-      font-size: 15px; font-weight: 600; background: var(--mm-gold-grad); color: #fff; flex-shrink: 0;
+      font-size: 15px; font-weight: 600; background: var(--brand-gold-grad); color: #fff; flex-shrink: 0;
     }
     .au-add-row button:disabled { opacity: 0.4; cursor: not-allowed; }
   `],
   template: `
     <div data-testid="admin-page">
 
-      <mm-top-bar title="Administration" [large]="true" [showBack]="true" (onBack)="goBack()">
+      <sp-top-bar title="Administration" [large]="true" [showBack]="true" (onBack)="goBack()">
         <div trailing style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer">
           <m-icon name="people" [size]="18"></m-icon>
         </div>
-      </mm-top-bar>
+      </sp-top-bar>
 
       <state-block *ngIf="isLoading"
         mode="loading" title="Loading users workspace"
@@ -65,17 +65,17 @@ import { AvComponent, MIconComponent, StateBlockComponent, TopBarComponent, Sett
         </div>
 
         <!-- User list -->
-        <mm-sett-group-header action="See all">Users</mm-sett-group-header>
-        <mm-sett-group>
+        <sp-sett-group-header action="See all">Users</sp-sett-group-header>
+        <sp-sett-group>
           <div *ngFor="let user of users; let last = last" class="au-user-row"
             [attr.data-testid]="'admin-user-' + user.username">
             <av [name]="user.username" [size]="36"></av>
             <div style="flex:1;min-width:0">
-              <div style="font-size:16px;font-weight:500;color:var(--mm-label)">
+              <div style="font-size:16px;font-weight:500;color:var(--brand-label)">
                 {{ user.username }}
                 <span *ngIf="!user.active" style="font-size:10px;color:#C44545;font-weight:700;margin-left:8px">LOCKED</span>
               </div>
-              <div style="font-size:13px;color:var(--mm-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <div style="font-size:13px;color:var(--brand-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 &#64;{{ user.username }}
               </div>
             </div>
@@ -87,14 +87,14 @@ import { AvComponent, MIconComponent, StateBlockComponent, TopBarComponent, Sett
             <div *ngIf="!last" class="au-divider"></div>
           </div>
 
-          <div *ngIf="!users.length" style="padding:20px 16px;text-align:center;color:var(--mm-label-secondary);font-size:14px">
+          <div *ngIf="!users.length" style="padding:20px 16px;text-align:center;color:var(--brand-label-secondary);font-size:14px">
             No users provisioned yet
           </div>
-        </mm-sett-group>
+        </sp-sett-group>
 
         <!-- Create user form -->
-        <mm-sett-group-header>{{ session.canManageUsers() ? 'Add user' : 'Users (read-only)' }}</mm-sett-group-header>
-        <mm-sett-group>
+        <sp-sett-group-header>{{ session.canManageUsers() ? 'Add user' : 'Users (read-only)' }}</sp-sett-group-header>
+        <sp-sett-group>
           <form class="au-add-row" (ngSubmit)="createUser(username.value, role.value); username.value='';"
             data-testid="create-user-form">
             <input #username type="text" aria-label="Username" placeholder="Username…"
@@ -106,7 +106,7 @@ import { AvComponent, MIconComponent, StateBlockComponent, TopBarComponent, Sett
               Add
             </button>
           </form>
-        </mm-sett-group>
+        </sp-sett-group>
 
       </ng-container>
 

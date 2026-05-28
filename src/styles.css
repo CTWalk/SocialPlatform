@@ -35,24 +35,24 @@
   --mobile-topbar-height: 60px;
   --mobile-tabbar-height: 74px;
 
-  /* ── Mammoth reference aliases (--mm-*) ──────────────────────
-     New components use --mm-* names matching the reference spec.
+  /* ── Legacy reference aliases (--brand-*) ──────────────────────
+     New components use --brand-* names matching the legacy reference spec.
      Existing components keep using --ink, --accent, etc.
      Both coexist during the transition. */
-  --mm-label:            #1A1A1A;
-  --mm-label-secondary:  #6E6E6E;
-  --mm-label-tertiary:   #A5A5A5;
-  --mm-gold:             #C9A961;
-  --mm-gold-dark:        #B08D3F;
-  --mm-gold-grad:        linear-gradient(180deg, #E0BD66 0%, #C9A961 100%);
-  --mm-gold-banner-bg:   rgba(201, 169, 97, 0.18);
-  --mm-sep:              rgba(0, 0, 0, 0.08);
-  --mm-sep-faint:        rgba(0, 0, 0, 0.05);
-  --mm-bg-chip:          #E6E4DE;
-  --mm-bg-settings-row:  #FFFFFF;
-  --mm-heart:            #E0426B;
-  --mm-reposted:         #34A871;
-  --mm-blue-ice:         #B6CFD8;
+  --brand-label:            #1A1A1A;
+  --brand-label-secondary:  #6E6E6E;
+  --brand-label-tertiary:   #A5A5A5;
+  --brand-gold:             #C9A961;
+  --brand-gold-dark:        #B08D3F;
+  --brand-gold-grad:        linear-gradient(180deg, #E0BD66 0%, #C9A961 100%);
+  --brand-gold-banner-bg:   rgba(201, 169, 97, 0.18);
+  --brand-sep:              rgba(0, 0, 0, 0.08);
+  --brand-sep-faint:        rgba(0, 0, 0, 0.05);
+  --brand-bg-chip:          #E6E4DE;
+  --brand-bg-settings-row:  #FFFFFF;
+  --brand-heart:            #E0426B;
+  --brand-reposted:         #34A871;
+  --brand-blue-ice:         #B6CFD8;
 }
 
 * {
@@ -1472,7 +1472,7 @@ textarea {
   transform: scale(1.04);
 }
 
-/* ─── Profile card (Mammoth frosted glass) ────────────────────── */
+/* ─── Profile card (reference frosted glass) ───────────────────── */
 
 .profile-card {
   display: flex;

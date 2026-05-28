@@ -9,7 +9,7 @@ export interface Post {
   handle?: string;
   time: string;
   body?: string;
-  mammoth?: boolean;
+  brand?: boolean;
   verified?: boolean;
   replies?: number;
   boardSlug?: string;
@@ -17,13 +17,13 @@ export interface Post {
 }
 
 @Component({
-  selector: 'mm-post-card',
+  selector: 'sp-post-card',
   standalone: true,
   imports: [NgIf, AvComponent, MIconComponent],
   template: `
     <div style="padding:14px 16px;position:relative;border-bottom:0.5px solid rgba(0,0,0,0.05)">
       <div style="display:flex;gap:12px">
-        <av [name]="post.author" [mammoth]="post.mammoth ?? false" [size]="40"></av>
+        <av [name]="post.author" [brand]="post.brand ?? false" [size]="40"></av>
         <div style="flex:1;min-width:0">
 
           <!-- header -->

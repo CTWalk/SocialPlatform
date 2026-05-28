@@ -13,10 +13,10 @@ import { Role, SessionService } from '../session.service';
       <section class="login-card">
         <div class="login-brand-mark">
           <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 64 64">
-            <path d="M 12 44 C 12 20, 20 16, 24 22 C 27 27, 24 36, 20 38 C 16 40, 14 36, 18 32 C 22 28, 30 26, 32 32 C 34 38, 30 44, 24 44 M 32 32 C 34 26, 42 26, 46 32 C 50 38, 46 40, 42 38 C 38 36, 35 27, 38 22 C 42 16, 50 20, 50 44" stroke="currentColor" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="32" cy="32" r="18" fill="currentColor"/>
           </svg>
         </div>
-        <h1>Mammoth</h1>
+        <h1>Social Platform</h1>
         <p>Sign in with your work identity to explore the feed, review queue, and role-based moderation.</p>
         <form [formGroup]="form" class="login-form" (ngSubmit)="submit()">
           <label>

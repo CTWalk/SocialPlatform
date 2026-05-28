@@ -3,6 +3,7 @@ name: Release Delivery
 on:
   push:
     branches:
+      - develop
       - 'release/**'
       - main
     paths:
@@ -64,6 +65,7 @@ jobs:
             env_name="${{ inputs.target_environment }}"
           else
             case "${GITHUB_REF_NAME}" in
+              develop) env_name="sit" ;;
               release/uat) env_name="uat" ;;
               release/preprod) env_name="preprod" ;;
               main) env_name="prod" ;;

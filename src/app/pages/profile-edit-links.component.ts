@@ -21,17 +21,17 @@ import {
     SettGroupHeaderComponent,
   ],
   template: `
-    <!-- EditProfileLinks — mammoth-mobile-2.jsx EditProfileLinks reference -->
+    <!-- EditProfileLinks — reference-mobile-2.jsx legacy reference -->
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column" data-testid="profile-edit-links-page">
 
-      <mm-top-bar title="Edit Info and Links" [showBack]="true" backAriaLabel="Back to profile" (onBack)="cancel()">
+      <sp-top-bar title="Edit Info and Links" [showBack]="true" backAriaLabel="Back to profile" (onBack)="cancel()">
         <div trailing
           (click)="save()"
           style="font-size:16px;font-weight:600;color:#1A1A1A;cursor:pointer;padding:4px 2px"
           [style.opacity]="saving ? 0.4 : 1">
           Done
         </div>
-      </mm-top-bar>
+      </sp-top-bar>
 
       <div style="flex:1;overflow:auto;padding:8px 0 48px">
 
@@ -59,10 +59,10 @@ import {
 
           <!-- TODO(backend): wire website + pronouns fields to profile endpoint when available -->
           <!-- UI is rendered with local state only until then -->
-          <mm-sett-group-header>Pinned link</mm-sett-group-header>
-          <mm-sett-group>
-            <mm-sett-row icon="link" label="Add a pinned link" [last]="true" (onClick)="noop()"></mm-sett-row>
-          </mm-sett-group>
+          <sp-sett-group-header>Pinned link</sp-sett-group-header>
+          <sp-sett-group>
+            <sp-sett-row icon="link" label="Add a pinned link" [last]="true" (onClick)="noop()"></sp-sett-row>
+          </sp-sett-group>
 
         </form>
 

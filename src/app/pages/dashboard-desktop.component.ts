@@ -38,7 +38,7 @@ function formatRelativeTime(iso: string): string {
     :host { display: block; background: #F3F1ED; min-height: 100%; }
     .toolbar {
       display: flex; align-items: center; gap: 12px;
-      padding: 16px 22px; border-bottom: 0.5px solid var(--mm-sep);
+      padding: 16px 22px; border-bottom: 0.5px solid var(--brand-sep);
     }
     .toolbar-title {
       font-family: var(--serif); font-size: 22px; font-weight: 400;
@@ -50,7 +50,7 @@ function formatRelativeTime(iso: string): string {
       align-items: center; justify-content: center; cursor: pointer;
     }
     .desktop-body { display: flex; align-items: flex-start; min-height: calc(100vh - 57px); }
-    .center-col { flex: 1; max-width: 640px; min-height: 100%; border-right: 0.5px solid var(--mm-sep); }
+    .center-col { flex: 1; max-width: 640px; min-height: 100%; border-right: 0.5px solid var(--brand-sep); }
     .compose-row {
       display: flex; align-items: center; gap: 10px;
       margin: 12px 16px; padding: 12px 14px;
@@ -104,7 +104,7 @@ function formatRelativeTime(iso: string): string {
           <div class="dots-btn" aria-label="More options">
             <m-icon name="dots" [size]="18"></m-icon>
           </div>
-          <mm-pill-btn kind="dark" icon="plus" (onClick)="openCompose()">New post</mm-pill-btn>
+          <sp-pill-btn kind="dark" icon="plus" (onClick)="openCompose()">New post</sp-pill-btn>
         </div>
 
         <div class="desktop-body">
@@ -135,7 +135,7 @@ function formatRelativeTime(iso: string): string {
 
             <!-- Feed list — exactly posts.length items, no empty rows -->
             <div *ngFor="let post of displayPosts()" (click)="openPost(post)" style="cursor:pointer">
-              <mm-post-card [post]="post"></mm-post-card>
+              <sp-post-card [post]="post"></sp-post-card>
             </div>
 
             <div *ngIf="!displayPosts().length" class="feed-empty" data-testid="feed-empty">

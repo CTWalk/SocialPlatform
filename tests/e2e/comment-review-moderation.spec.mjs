@@ -76,7 +76,6 @@ async function openReviewQueueFromActivity(page) {
   await test.step('open review queue from activity', async () => {
     await clickVisibleNav(page, 'nav-activity', 'nav-activity-mobile');
     await expect(page.getByTestId('activity-page')).toBeVisible({ timeout: uiTimeout });
-
     const reviewQueueLink = page.getByRole('link', { name: 'Review queue' }).first();
     await expect(reviewQueueLink).toBeVisible({ timeout: uiTimeout });
     await reviewQueueLink.scrollIntoViewIfNeeded();

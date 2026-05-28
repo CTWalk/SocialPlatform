@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
   imports: [TopBarComponent],
   template: `
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column">
-      <mm-top-bar title="Sounds and Haptics" [showBack]="true" (onBack)="back()"></mm-top-bar>
+      <sp-top-bar title="Sounds and Haptics" [showBack]="true" (onBack)="back()"></sp-top-bar>
       <div style="padding:24px 20px 48px;font-size:14px;line-height:1.5;color:#6E6E6E">
         Sounds and haptic preferences will live here.
       </div>

@@ -22,10 +22,10 @@ import {
     TopBarComponent,
   ],
   template: `
-    <!-- AppearanceScreen — mammoth-mobile-3.jsx reference -->
+    <!-- AppearanceScreen — reference-mobile-3.jsx legacy reference -->
     <div style="background:#F3F1ED;min-height:100%;display:flex;flex-direction:column">
 
-      <mm-top-bar title="Appearance" [showBack]="true" (onBack)="back()"></mm-top-bar>
+      <sp-top-bar title="Appearance" [showBack]="true" (onBack)="back()"></sp-top-bar>
 
       <div style="flex:1;overflow:auto;padding-bottom:48px">
 
@@ -48,7 +48,7 @@ import {
         </div>
 
         <!-- Text Size slider row -->
-        <mm-sett-group style="margin-top:16px">
+        <sp-sett-group style="margin-top:16px">
           <div style="padding:12px 16px;position:relative">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
               <m-icon name="image" [size]="20"></m-icon>
@@ -66,19 +66,19 @@ import {
                 [style.left]="'calc(' + sliderPct + '% - 13px)'"></div>
             </div>
           </div>
-        </mm-sett-group>
+        </sp-sett-group>
 
         <!-- Display settings group -->
-        <mm-sett-group-header></mm-sett-group-header>
-        <mm-sett-group>
+        <sp-sett-group-header></sp-sett-group-header>
+        <sp-sett-group>
           <!-- TODO(backend): wire all fields to appearance preferences endpoint when available -->
           <!-- UI persists to localStorage only until then (decisions.md §C2) -->
-          <mm-sett-row icon="paint"   label="Theme"                    [value]="theme"          (onClick)="cycleTheme()"></mm-sett-row>
-          <mm-sett-row icon="person"  label="Circle profile icons"     [toggle]="circleIcons"   (onToggle)="setCircleIcons($event)"   [chevron]="false"></mm-sett-row>
-          <mm-sett-row icon="warning" label="Content warning overlays" [toggle]="cwOverlays"    (onToggle)="setCwOverlays($event)"    [chevron]="false"></mm-sett-row>
-          <mm-sett-row icon="warning" label="Blur sensitive content"   [toggle]="blurSensitive" (onToggle)="setBlurSensitive($event)" [chevron]="false"></mm-sett-row>
-          <mm-sett-row icon="gif"     label="Auto-play videos & GIFs"  [toggle]="autoPlay"      (onToggle)="setAutoPlay($event)"      [chevron]="false" [last]="true"></mm-sett-row>
-        </mm-sett-group>
+          <sp-sett-row icon="paint"   label="Theme"                    [value]="theme"          (onClick)="cycleTheme()"></sp-sett-row>
+          <sp-sett-row icon="person"  label="Circle profile icons"     [toggle]="circleIcons"   (onToggle)="setCircleIcons($event)"   [chevron]="false"></sp-sett-row>
+          <sp-sett-row icon="warning" label="Content warning overlays" [toggle]="cwOverlays"    (onToggle)="setCwOverlays($event)"    [chevron]="false"></sp-sett-row>
+          <sp-sett-row icon="warning" label="Blur sensitive content"   [toggle]="blurSensitive" (onToggle)="setBlurSensitive($event)" [chevron]="false"></sp-sett-row>
+          <sp-sett-row icon="gif"     label="Auto-play videos & GIFs"  [toggle]="autoPlay"      (onToggle)="setAutoPlay($event)"      [chevron]="false" [last]="true"></sp-sett-row>
+        </sp-sett-group>
 
       </div>
     </div>
@@ -104,19 +104,19 @@ export class SettingsAppearanceComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const stored = localStorage.getItem('mm.textSize');
+    const stored = localStorage.getItem('brand.textSize');
     if (stored !== null) {
       const n = parseInt(stored, 10);
       if (!isNaN(n)) this.textSizeOffset = Math.max(this.sliderMin, Math.min(this.sliderMax, n));
     }
-    const storedTheme = localStorage.getItem('mm.theme');
+    const storedTheme = localStorage.getItem('brand.theme');
     if (storedTheme === 'Light' || storedTheme === 'Dark' || storedTheme === 'System') {
       this.theme = storedTheme;
     }
-    this.circleIcons    = localStorage.getItem('mm.circleAvatars')   !== 'false';
-    this.cwOverlays     = localStorage.getItem('mm.contentWarnings') !== 'false';
-    this.blurSensitive  = localStorage.getItem('mm.blurSensitive')   !== 'false';
-    this.autoPlay       = localStorage.getItem('mm.autoplay')        !== 'false';
+    this.circleIcons    = localStorage.getItem('brand.circleAvatars')   !== 'false';
+    this.cwOverlays     = localStorage.getItem('brand.contentWarnings') !== 'false';
+    this.blurSensitive  = localStorage.getItem('brand.blurSensitive')   !== 'false';
+    this.autoPlay       = localStorage.getItem('brand.autoplay')        !== 'false';
     this.applyAll();
   }
 
@@ -125,44 +125,44 @@ export class SettingsAppearanceComponent implements OnInit {
     const pct = e.offsetX / target.clientWidth;
     const raw = Math.round(pct * (this.sliderMax - this.sliderMin) + this.sliderMin);
     this.textSizeOffset = Math.max(this.sliderMin, Math.min(this.sliderMax, raw));
-    localStorage.setItem('mm.textSize', String(this.textSizeOffset));
-    document.documentElement.style.setProperty('--mm-text-scale', String(this.textSizeOffset));
+    localStorage.setItem('brand.textSize', String(this.textSizeOffset));
+    document.documentElement.style.setProperty('--brand-text-scale', String(this.textSizeOffset));
   }
 
   cycleTheme(): void {
     const cycle: Array<'System' | 'Light' | 'Dark'> = ['System', 'Light', 'Dark'];
     this.theme = cycle[(cycle.indexOf(this.theme) + 1) % cycle.length];
-    localStorage.setItem('mm.theme', this.theme);
+    localStorage.setItem('brand.theme', this.theme);
     this.applyTheme();
   }
 
   setCircleIcons(val: boolean): void {
     this.circleIcons = val;
-    localStorage.setItem('mm.circleAvatars', String(val));
-    document.body.classList.toggle('mm-circle-avatars', val);
+    localStorage.setItem('brand.circleAvatars', String(val));
+    document.body.classList.toggle('brand-circle-avatars', val);
   }
 
   setCwOverlays(val: boolean): void {
     this.cwOverlays = val;
-    localStorage.setItem('mm.contentWarnings', String(val));
+    localStorage.setItem('brand.contentWarnings', String(val));
   }
 
   setBlurSensitive(val: boolean): void {
     this.blurSensitive = val;
-    localStorage.setItem('mm.blurSensitive', String(val));
-    document.body.classList.toggle('mm-blur-sensitive', val);
+    localStorage.setItem('brand.blurSensitive', String(val));
+    document.body.classList.toggle('brand-blur-sensitive', val);
   }
 
   setAutoPlay(val: boolean): void {
     this.autoPlay = val;
-    localStorage.setItem('mm.autoplay', String(val));
+    localStorage.setItem('brand.autoplay', String(val));
   }
 
   private applyAll(): void {
-    document.documentElement.style.setProperty('--mm-text-scale', String(this.textSizeOffset));
+    document.documentElement.style.setProperty('--brand-text-scale', String(this.textSizeOffset));
     this.applyTheme();
-    document.body.classList.toggle('mm-circle-avatars', this.circleIcons);
-    document.body.classList.toggle('mm-blur-sensitive', this.blurSensitive);
+    document.body.classList.toggle('brand-circle-avatars', this.circleIcons);
+    document.body.classList.toggle('brand-blur-sensitive', this.blurSensitive);
   }
 
   private applyTheme(): void {
